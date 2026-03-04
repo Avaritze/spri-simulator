@@ -151,14 +151,24 @@
 
             let interneAuftragsId;
             let requestUrl;
+            let icc;
 
             if(type.indexOf("-PV", 0) !== -1)
             {
                 interneAuftragsId = document.getElementById("auftragegepv").value;
+                let auftrag = document.getElementById("auftragegepv");
+                let extAuftragNr = auftrag.options[auftrag.selectedIndex].text;
+                if(extAuftragNr.indexOf("AVA", 0) !== -1) {
+                    icc = 'nps';
+                } else if(extAuftragNr.indexOf("NPS", 0) !== -1) {
+                    icc = 'ava';
+                }
             }
             else
             {
                 interneAuftragsId = document.getElementById("auftragege").value;
+                let auftrag = document.getElementById("auftragege");
+                let extAuftragNr = auftrag.options[auftrag.selectedIndex].text;
             }
 
             if(sender.indexOf("LE", 0) !== -1)
@@ -167,7 +177,8 @@
             }
             else if(sender.indexOf("AG", 0) !== -1)
             {
-                requestUrl = "http://localhost/soap/v4/sendeMeldung/"+interneAuftragsId+"/"+type+"/"+code;
+                if(extAuftragNr.indexOf("PV.") >= 0)
+                requestUrl = "http://localhost/soap/v4/sendeMeldung/"+icc+"/"+interneAuftragsId+"/"+type+"/"+code;
             }
             console.log("aid: "+interneAuftragsId+" / url: "+requestUrl);
             const xhr = new XMLHttpRequest();
@@ -212,7 +223,23 @@
                             document.getElementById("error-row").classList.replace("invisible", "visible");
                             document.getElementById("error-row").innerText = formatXml(xhr.responseText);
                         }
-                    }else {
+                    } else if(xhr.status === 404) {
+                        let content_type = xhr.getResponseHeader("Content-Type");
+                        if(content_type.indexOf("text/html") >= 0)
+                        {
+                            const parser = new DOMParser();
+                            const response = parser.parseFromString(xhr.responseText, "text/html");
+                            document.getElementById("error-row").classList.replace("invisible", "visible");
+                            console.log('length: '+response.querySelectorAll('.container').length);
+                            if(response.querySelectorAll('.container').length > 0)
+                            {
+                                response.querySelectorAll('.container').forEach(function(child) {
+                                    console.log(child);
+                                    document.getElementById("error-body").appendChild(child);
+                                });
+                            }
+                        }
+                    } else {
 
                         let content_type = xhr.getResponseHeader("Content-Type");
                         if(content_type.indexOf("text/html") >= 0)
@@ -248,73 +275,49 @@
             xhr.send();
         }
 
-        function sendSOAPRequestBereitstellung(ak, auftrag) {
-            
+        function sendSOAPmeldung() {
+
             let xhr = new XMLHttpRequest();
-            let soapAuftrag;
-            let extAuftragsNr;
-            console.log(ak);
-            if(ak==="Standard") {
-                if(auftrag === 1){
-                    extAuftragsNr = "EXT.8.1.<?php echo sprintf('%02d', $this->count_Auftrag); ?>";
-                    soapAuftrag = `<?php echo $request_auftrag_bereitstellung_komplett; ?>`;
-                }
-                else if(auftrag === 2) {
-                    extAuftragsNr = "1u1.8.3.<?php echo sprintf('%02d', $this->count_Auftrag); ?>";
-                    soapAuftrag = `<?php echo $request_auftrag_bereitstellung_1u1; ?>`;
-                } else if(auftrag === 3) {
-                    extAuftragsNr = "EXT.8.5.<?php echo sprintf('%02d', $this->count_Auftrag); ?>";
-                    soapAuftrag = `<?php echo $request_auftrag_bereitstellung_konnektivitaet; ?>`;
-                } else if(auftrag === 4) {
-                    extAuftragsNr = "EXT.8.7.<?php echo sprintf('%02d', $this->count_Auftrag); ?>";
-                    soapAuftrag = `<?php echo $request_auftrag_bereitstellung_fehler; ?>`;
-                } else if(auftrag === 5) {
-                    extAuftragsNr = "EXT.8.8.<?php echo sprintf('%02d', $this->count_Auftrag); ?>";
-                    soapAuftrag = `<?php echo $request_auftrag_bereitstellung_strukturfehler; ?>`;
-                }
+            let soapMeldung = `<?php echo $msg_zwm_ag; ?>`;
+            let gf_art = new Map([
+                ['NEU', 'Bereitstellung'],
+                ['KUE-AG', 'Kuendigung'],
+                ['LAE', 'Aenderung'],
+                ['EST', 'Entstoerung'],
+                ['PV', 'Endkundenanbieterwechsel']
+            ]);
+            let agnr;
+            let auftrag = document.getElementById("auftragege");
+            let AuftragNr = auftrag.options[auftrag.selectedIndex].text;
+            let geschaeftsfall = AuftragNr.split(" / ")[0];
+            let extAuftragNr = AuftragNr.split(" / ")[1];
+            let geschaeftsfallart = gf_art.get(geschaeftsfall);
+            let vertragsnr = document.getElementById("auftragege").value;
+            if(AuftragNr.indexOf("AVA", 0) !== -1) {
+                agnr = 'AVA1203666';
 
-
-            } else {
-                extAuftragsNr = document.getElementById("auftragNeuAen").value;
-                console.log(extAuftragsNr);
-                if(extAuftragsNr.indexOf("8.1", 0) !== -1) {
-                    soapAuftrag = `<?php echo $request_auftrag_bereitstellung_komplett; ?>`;
-                } else if(extAuftragsNr.indexOf("8.3", 0) !== -1) {
-                    soapAuftrag = `<?php echo $request_auftrag_bereitstellung_1u1; ?>`;
-                } else if(extAuftragsNr.indexOf("8.5", 0) !== -1) {
-                    soapAuftrag = `<?php echo $request_auftrag_bereitstellung_konnektivitaet; ?>`;
-                }
+            } else if(AuftragNr.indexOf("NPS", 0) !== -1) {
+                agnr = 'NPS6663021';
             }
-            console.log(extAuftragsNr);
-            soapAuftrag = soapAuftrag.replace("<externeAuftragsnummer></externeAuftragsnummer>","<externeAuftragsnummer>"+extAuftragsNr+"</externeAuftragsnummer>");
 
-            if(ak==="Storno") {
-                soapAuftrag = soapAuftrag.replace("<aenderungskennzeichen></aenderungskennzeichen>","<aenderungskennzeichen>Storno</aenderungskennzeichen>");
-                soapAuftrag = soapAuftrag.replace("<auftraggeberWunschtermin></auftraggeberWunschtermin>",
-                    "<auftraggeberWunschtermin><datum><?php echo date('Y-m-d',strtotime('+7 day')); ?></datum><zeitfenster>26</zeitfenster></auftraggeberWunschtermin>");
-            } else if(ak==="Terminverschiebung") {
-                soapAuftrag = soapAuftrag.replace("<auftraggeberWunschtermin></auftraggeberWunschtermin>", "<auftraggeberWunschtermin><datum><?php echo date('Y-m-d',strtotime('+7 day')); ?></datum><zeitfenster>26</zeitfenster></auftraggeberWunschtermin>");
-                soapAuftrag = soapAuftrag.replace("<aenderungskennzeichen></aenderungskennzeichen>",
-                    "<aenderungskennzeichen>Terminverschiebung</aenderungskennzeichen><terminNeu><?php echo date('Y-m-d',strtotime('+14 day')); ?></terminNeu>");
 
-            } else {
-
-                soapAuftrag = soapAuftrag.replace("<aenderungskennzeichen></aenderungskennzeichen>","<aenderungskennzeichen>Standard</aenderungskennzeichen>");
-                soapAuftrag = soapAuftrag.replace("<auftraggeberWunschtermin></auftraggeberWunschtermin>",
-                    "<auftraggeberWunschtermin><datum><?php echo date('Y-m-d',strtotime('+7 day')); ?></datum><zeitfenster>26</zeitfenster></auftraggeberWunschtermin>");
-            }
+            soapMeldung = soapMeldung.replace("<geschaeftsfall></geschaeftsfall>","<geschaeftsfall>"+geschaeftsfall+"</geschaeftsfall>");
+            soapMeldung = soapMeldung.replace("<geschaeftsfallart></geschaeftsfallart>","<geschaeftsfallart>"+geschaeftsfallart+"</geschaeftsfallart>");
+            soapMeldung = soapMeldung.replace("<vertragsnummer></vertragsnummer>","<vertragsnummer>"+vertragsnr+"</vertragsnummer>");
+            soapMeldung = soapMeldung.replace("<externeAuftragsnummer></externeAuftragsnummer>","<externeAuftragsnummer>"+extAuftragNr+"</externeAuftragsnummer>");
+            soapMeldung = soapMeldung.replace("<auftraggebernummer></auftraggebernummer>","<auftraggebernummer>"+agnr+"</auftraggebernummer>");
 
             let url = '<?php echo \Fuel\Core\Router::get('oass_endpoint', ['version' => 4]); ?>';
             xhr.open('POST', url, true);
             xhr.setRequestHeader("Content-Type", "text/html");
-            xhr.setRequestHeader('SOAPAction', 'http://spri.telekom.de/oss/v4/spri/annehmenAuftrag');
+            xhr.setRequestHeader('SOAPAction', 'http://spri.telekom.de/oss/v4/spri/annehmenMeldung');
             console.log("readyState: "+xhr.readyState)
             xhr.onreadystatechange = function () {
                 console.log("onreadystatechange: "+xhr.readyState)
                 if (xhr.readyState === 4) {
                     console.log("http-status: "+xhr.status)
                     if (xhr.status === 200) {
-                        document.getElementById('request').innerText = formatXml(soapAuftrag);
+                        document.getElementById('request').innerText = formatXml(soapMeldung);
                         document.getElementById('response').innerText = formatXml(xhr.responseText);
                         console.dir(xhr.responseText);
                     } else if(xhr.status === 500) {
@@ -326,12 +329,12 @@
                             console.dir(xhr.responseText);
                             document.getElementById("error-row").classList.replace("invisible", "visible");
                             console.dir(response.getElementById("wrapper"));
-                            document.getElementById("error-row").appendChild(response.getElementById("wrapper"));
+                            document.getElementById("error-body").appendChild(response.getElementById("wrapper"));
                         }
                         else if(xhr.getResponseHeader("Content-Type").indexOf("xml"))
                         {
                             document.getElementById("error-row").classList.replace("invisible", "visible");
-                            document.getElementById("error-row").innerText = formatXml(xhr.responseText);
+                            document.getElementById("error-body").innerText = formatXml(xhr.responseText);
                         }
                     } else {
 
@@ -355,17 +358,154 @@
                         const parser = new DOMParser();
                         const response = parser.parseFromString(xhr.responseText, "text/html");
                         document.getElementById("error-row").classList.replace("invisible", "visible");
-                        document.getElementById("error-row").appendChild(response.getElementById("wrapper"));
+                        document.getElementById("error-body").appendChild(response.getElementById("wrapper"));
                     }
                     else if(xhr.getResponseHeader("Content-Type").indexOf("xml"))
                     {
                         document.getElementById("error-row").classList.replace("invisible", "visible");
-                        document.getElementById("error-row").innerText = formatXml(xhr.responseText);
+                        document.getElementById("error-body").innerText = formatXml(xhr.responseText);
                     }
                 }
             };
 
-            xhr.send(soapAuftrag);
+            xhr.send(soapMeldung);
+        }
+
+        function sendSOAPRequestBereitstellung(ak, auftrag, icc) {
+            
+            let xhr = new XMLHttpRequest();
+            let soapAuftrag;
+            let agnr;
+            let agRequest;
+            let extAuftragsNr;
+
+            if(ak==="Standard") {
+                if(auftrag === 1){
+                    if(icc === "ava") {
+                        agnr = "<?php echo $this->arr_Auftraggeber['ava']['agnr']; ?>";
+                        extAuftragsNr = "<?php echo $this->arr_Auftraggeber['ava']['icc'] . ".8.1." . sprintf('%02d', $this->count_Auftrag); ?>";
+                        agRequest = `<?php echo $request_auftrag_ava; ?>`;
+                    } else if(icc === "nps") {
+                        agnr = "<?php echo $this->arr_Auftraggeber['nps']['agnr']; ?>";
+                        extAuftragsNr = "<?php echo $this->arr_Auftraggeber['nps']['icc'] . ".7.1." . sprintf('%02d', $this->count_Auftrag); ?>";
+                        agRequest = `<?php echo $request_auftrag_nps; ?>`;
+                    }
+                    homeId = "<?php echo $this->arr_home_ids[rand(0, count($this->arr_home_ids)-1)]; ?>";
+                    soapAuftrag = `<?php echo $request_bereitstellung_neu; ?>`;
+                    soapAuftrag = soapAuftrag.replace("<homeIdNummer></homeIdNummer>","<homeIdNummer>"+homeId+"</homeIdNummer>");
+                }
+                else if(auftrag === 2) {
+                    extAuftragsNr = "NPS.7.1.<?php echo sprintf('%02d', $this->count_Auftrag); ?>";
+                    soapAuftrag = `<?php echo $request_auftrag_bereitstellung_neu; ?>`;
+                } else if(auftrag === 3) {
+                    extAuftragsNr = "AVA.8.3.<?php echo sprintf('%02d', $this->count_Auftrag); ?>";
+                    soapAuftrag = `<?php echo $request_auftrag_bereitstellung_konnektivitaet; ?>`;
+                } else if(auftrag === 4) {
+                    extAuftragsNr = "NPS.7.3.<?php echo sprintf('%02d', $this->count_Auftrag); ?>";
+                    soapAuftrag = `<?php echo $request_auftrag_neu_konnektivitaet; ?>`;
+                }
+
+
+            } else {
+                extAuftragsNr = document.getElementById("auftragNeuAen").value;
+                console.log(extAuftragsNr);
+                if(extAuftragsNr.indexOf("AVA", 0) !== -1) {
+                    agnr = "<?php echo $this->arr_Auftraggeber['ava']['agnr']; ?>";
+                    agRequest = `<?php echo $request_auftrag_ava; ?>`;
+                    soapAuftrag = `<?php echo $request_bereitstellung_neu; ?>`;
+                } else if(extAuftragsNr.indexOf("NPS", 0) !== -1) {
+                    agnr = "<?php echo $this->arr_Auftraggeber['nps']['agnr']; ?>";
+                    agRequest = `<?php echo $request_auftrag_nps; ?>`;
+                    soapAuftrag = `<?php echo $request_bereitstellung_neu; ?>`;
+                } else if(extAuftragsNr.indexOf("8.3", 0) !== -1) {
+                    soapAuftrag = `<?php echo $request_auftrag_bereitstellung_konnektivitaet; ?>`;
+                } else if(extAuftragsNr.indexOf("7.3", 0) !== -1) {
+                    soapAuftrag = `<?php echo $request_auftrag_neu_konnektivitaet; ?>`;
+                }
+            }
+
+
+            soapAuftrag = soapAuftrag.replace("<auftraggebernummer></auftraggebernummer>","<auftraggebernummer>"+agnr+"</auftraggebernummer>");
+            soapAuftrag = soapAuftrag.replace("<externeAuftragsnummer></externeAuftragsnummer>","<externeAuftragsnummer>"+extAuftragsNr+"</externeAuftragsnummer>");
+
+            if(ak==="Storno") {
+                soapAuftrag = soapAuftrag.replace("<aenderungskennzeichen></aenderungskennzeichen>","<aenderungskennzeichen>Storno</aenderungskennzeichen>");
+                soapAuftrag = soapAuftrag.replace("<auftraggeberWunschtermin></auftraggeberWunschtermin>",
+                    "<auftraggeberWunschtermin><datum><?php echo date('Y-m-d',strtotime('+7 day')); ?></datum><zeitfenster>26</zeitfenster></auftraggeberWunschtermin>");
+            } else if(ak==="Terminverschiebung") {
+                soapAuftrag = soapAuftrag.replace("<auftraggeberWunschtermin></auftraggeberWunschtermin>", "<auftraggeberWunschtermin><datum><?php echo date('Y-m-d',strtotime('+7 day')); ?></datum><zeitfenster>26</zeitfenster></auftraggeberWunschtermin>");
+                soapAuftrag = soapAuftrag.replace("<aenderungskennzeichen></aenderungskennzeichen>",
+                    "<aenderungskennzeichen>Terminverschiebung</aenderungskennzeichen><terminNeu><?php echo date('Y-m-d',strtotime('+14 day')); ?></terminNeu>");
+
+            } else {
+
+                soapAuftrag = soapAuftrag.replace("<aenderungskennzeichen></aenderungskennzeichen>","<aenderungskennzeichen>Standard</aenderungskennzeichen>");
+                soapAuftrag = soapAuftrag.replace("<auftraggeberWunschtermin></auftraggeberWunschtermin>",
+                    "<auftraggeberWunschtermin><datum><?php echo date('Y-m-d',strtotime('+7 day')); ?></datum><zeitfenster>26</zeitfenster></auftraggeberWunschtermin>");
+            }
+            agRequest = agRequest.replace("<auftrag></auftrag>",soapAuftrag);
+            let url = '<?php echo \Fuel\Core\Router::get('oass_endpoint', ['version' => 4]); ?>';
+            xhr.open('POST', url, true);
+            xhr.setRequestHeader("Content-Type", "text/html");
+            xhr.setRequestHeader('SOAPAction', 'http://spri.telekom.de/oss/v4/spri/annehmenAuftrag');
+            console.log("readyState: "+xhr.readyState)
+            xhr.onreadystatechange = function () {
+                console.log("onreadystatechange: "+xhr.readyState)
+                if (xhr.readyState === 4) {
+                    console.log("http-status: "+xhr.status)
+                    if (xhr.status === 200) {
+                        document.getElementById('request').innerText = formatXml(agRequest);
+                        document.getElementById('response').innerText = formatXml(xhr.responseText);
+                        console.dir(xhr.responseText);
+                    } else if(xhr.status === 500) {
+                        console.dir(xhr);
+                        if(xhr.getResponseHeader("Content-Type").indexOf("text/html; charset=UTF-8"))
+                        {
+                            const parser = new DOMParser();
+                            const response = parser.parseFromString(xhr.responseText, "text/html");
+                            console.dir(xhr.responseText);
+                            document.getElementById("error-row").classList.replace("invisible", "visible");
+                            console.dir(response.getElementById("wrapper"));
+                            document.getElementById("error-body").appendChild(response.getElementById("wrapper"));
+                        }
+                        else if(xhr.getResponseHeader("Content-Type").indexOf("xml"))
+                        {
+                            document.getElementById("error-row").classList.replace("invisible", "visible");
+                            document.getElementById("error-body").innerText = formatXml(xhr.responseText);
+                        }
+                    } else {
+
+                        console.dir(xhr.responseText);
+                        if(xhr.getResponseHeader("Content-Type").indexOf("text/html; charset=UTF-8"))
+                        {
+                            const parser = new DOMParser();
+                            const response = parser.parseFromString(xhr.responseText, "text/html");
+                            document.getElementById("error-row").classList.replace("invisible", "visible");
+                            document.getElementById("error-row").appendChild(response.getElementById("wrapper"));
+                        }
+                        else if(xhr.getResponseHeader("Content-Type").indexOf("xml"))
+                        {
+                            document.getElementById("error-row").classList.replace("invisible", "visible");
+                            document.getElementById("error-row").innerText = formatXml(xhr.responseText);
+                        }
+                    }
+                } else {
+                    if(xhr.getResponseHeader("Content-Type").indexOf("text/html; charset=UTF-8"))
+                    {
+                        const parser = new DOMParser();
+                        const response = parser.parseFromString(xhr.responseText, "text/html");
+                        document.getElementById("error-row").classList.replace("invisible", "visible");
+                        document.getElementById("error-body").appendChild(response.getElementById("wrapper"));
+                    }
+                    else if(xhr.getResponseHeader("Content-Type").indexOf("xml"))
+                    {
+                        document.getElementById("error-row").classList.replace("invisible", "visible");
+                        document.getElementById("error-body").innerText = formatXml(xhr.responseText);
+                    }
+                }
+            };
+
+            xhr.send(agRequest);
         }
 
         function sendSOAPRequestKuendigung(ak) {
@@ -554,7 +694,7 @@
             soapAuftrag = soapAuftrag.replace("<lineId></lineId>","<lineId>"+lineid+"</lineId>");
             soapAuftrag = soapAuftrag.replace("<aenderungskennzeichen></aenderungskennzeichen>","<aenderungskennzeichen>Standard</aenderungskennzeichen>");
             soapAuftrag = soapAuftrag.replace("<auftraggeberWunschtermin></auftraggeberWunschtermin>",
-                "<auftraggeberWunschtermin><datum><?php echo date('Y-m-d',strtotime('+7 day')); ?></datum><zeitfenster>26</zeitfenster></auftraggeberWunschtermin>");
+                "<auftraggeberWunschtermin><datum><?php echo date('Y-m-d',strtotime('+2 day')); ?></datum><zeitfenster>26</zeitfenster></auftraggeberWunschtermin>");
             
             xhr.setRequestHeader('Content-Type', 'text/xml');
             xhr.setRequestHeader('SOAPAction', 'http://spri.telekom.de/oss/v4/spri/annehmenAuftrag');
@@ -682,7 +822,7 @@
             let vertrag = document.getElementById("vertrag");
             let vertragsnr = document.getElementById("vertrag").value;
             let lineid = vertrag.options[vertrag.selectedIndex].text;
-            let soapAuftrag = `<?php echo $this->request_auftrag_providerwechsel; ?>`;
+            let soapAuftrag = `<?php echo $this->request_auftrag_providerwechsel_ava; ?>`;
 
             soapAuftrag = soapAuftrag.replace("<lineId></lineId>","<lineId>"+lineid+"</lineId>");
             soapAuftrag = soapAuftrag.replace("<aenderungskennzeichen></aenderungskennzeichen>","<aenderungskennzeichen>Standard</aenderungskennzeichen>");
@@ -805,7 +945,10 @@
             let soapRequest = document.getElementById("soapRequestText").value;
 
             if(!(soapRequest.includes(':Envelope')) ) {
-                soapRequest =  `<?php echo $this->request_wrapper_anfang; ?>` + soapRequest +  `<?php echo $this->request_wrapper_ende; ?>`;
+
+                let soapEnv =  `<?php echo $this->request_auftrag_ava; ?>`;
+                soapEnv = soapEnv.replace("<auftrag></auftrag>","<auftrag>"+soapRequest+"</auftrag>");
+                soapRequest =  soapEnv;
             }
             let xhr = new XMLHttpRequest();
             xhr.open('POST', '<?php echo \Fuel\Core\Router::get('oass_endpoint', ['version' => 4]); ?>', true);
@@ -869,11 +1012,10 @@
                         </div>
                         <div class="card-body">
                             <form id="annehmenAuftrag">
-                                <button type="button" class="btn btn-primary" id="NEU" onclick="event.preventDefault(); sendSOAPRequestBereitstellung('Standard', 1);">NEU</button>
-                                <button type="button" class="btn btn-primary" id="NEU-EE" onclick="event.preventDefault(); sendSOAPRequestBereitstellung('Standard', 2);">NEU 1&1</button>
-                                <button type="button" class="btn btn-primary" id="NEU-K" onclick="event.preventDefault(); sendSOAPRequestBereitstellung('Standard', 3);">NEU Konnekt</button>
-                                <button type="button" class="btn btn-danger" id="NEU-IC" onclick="event.preventDefault(); sendSOAPRequestBereitstellung('Standard', 4);">NEU 0999</button>
-                                <button type="button" class="btn btn-danger" id="NEU-IC" onclick="event.preventDefault(); sendSOAPRequestBereitstellung('Standard', 5);">NEU 0995</button>
+                                <button type="button" class="btn btn-primary" id="NEU" onclick="event.preventDefault(); sendSOAPRequestBereitstellung('Standard', 1, 'ava');">NEU AVA</button>
+                                <button type="button" class="btn btn-primary" id="NEU-EE" onclick="event.preventDefault(); sendSOAPRequestBereitstellung('Standard', 1, 'nps');">NEU NPS</button>
+                                <button type="button" class="btn btn-primary" id="NEU-K" onclick="event.preventDefault(); sendSOAPRequestBereitstellung('Standard', 2, 'ava');">NEU AVA Konnekt</button>
+                                <button type="button" class="btn btn-primary" id="NEU-IC" onclick="event.preventDefault(); sendSOAPRequestBereitstellung('Standard', 2, 'nps');">NEU NPS Konnekt</button>
                             </form><br>
                             <form id="annehmenAuftragTextarea">
                                 <label for="soapRequestText" class="form-label">XML</label>
@@ -985,14 +1127,14 @@
                 <div class="col">
                     <div class="card">
                         <div class="card-header">
-                            <h4>Meldung</h4>
+                            <h4>Gf-Meldung</h4>
                         </div>
                         <div class="card-body">
                             <form id="annehmenGfMeldung">
-                                <button type="button" class="btn btn-primary" id="" onclick="event.preventDefault(); sendSpriMessage('QEB','0000','LE');">QEB 0000</button>
-                                <button type="button" class="btn btn-primary" id="" onclick="event.preventDefault(); sendSpriMessage('ABM','0000','LE');">ABM 0000</button>
-                                <button type="button" class="btn btn-primary" id="" onclick="event.preventDefault(); sendSpriMessage('ERLM','0010','LE');">ERLM 0010</button>
-                                <button type="button" class="btn btn-primary" id="" onclick="event.preventDefault(); sendSpriMessage('ENTM','0010','LE');">ENTM 0010</button>
+                                <button type="button" class="btn btn-primary" id="" onclick="event.preventDefault(); sendSpriJob(1);">QEB</button>
+                                <button type="button" class="btn btn-primary" id="" onclick="event.preventDefault(); sendSpriJob(2);">ABM</button>
+                                <button type="button" class="btn btn-primary" id="" onclick="event.preventDefault(); sendSpriJob(3);">ERLM</button>
+                                <button type="button" class="btn btn-primary" id="" onclick="event.preventDefault(); sendSpriJob(4);">ENTM</button>
                             </form>
                         </div>
                     </div>
@@ -1004,10 +1146,6 @@
                         </div>
                         <div class="card-body">
                             <form id="annehmenGfMeldung">
-                                <button type="button" class="btn btn-primary" id="" onclick="event.preventDefault(); sendSpriJob(1);">QEB</button>
-                                <button type="button" class="btn btn-primary" id="" onclick="event.preventDefault(); sendSpriJob(2);">ABM</button>
-                                <button type="button" class="btn btn-primary" id="" onclick="event.preventDefault(); sendSpriJob(3);">ERLM</button>
-                                <button type="button" class="btn btn-primary" id="" onclick="event.preventDefault(); sendSpriJob(4);">ENTM</button>
                                 <button type="button" class="btn btn-primary" id="" onclick="event.preventDefault(); sendSpriJob(5);">VZM 1576</button>
                                 <button type="button" class="btn btn-primary" id="" onclick="event.preventDefault(); sendSpriJob(6);">VZM 1577</button>
                                 <button type="button" class="btn btn-primary" id="" onclick="event.preventDefault(); sendSpriJob(7);">ABBM 8600</button>
@@ -1021,14 +1159,14 @@
                 <div class="col">
                     <div class="card">
                         <div class="card-header">
-                            <h4>Meldung Partner</h4>
+                            <h4>Gf-Meldung AG</h4>
                         </div>
                         <div class="card-body">
                             <form id="annehmenPartnerMeldung">
                                 <button type="button" class="btn btn-primary" id="ERLM-K" onclick="event.preventDefault(); sendSpriMessage('ERLM-K','0015','AG');">ERLM-K 0015</button>
-                                <button type="button" class="btn btn-primary" id="ZWM-AG" onclick="event.preventDefault(); sendSpriMessage('ZWM-AG','7040','AG');">ZWM-AG 7040</button>
+                                <button type="button" class="btn btn-primary" id="ZWM-AG" onclick="event.preventDefault(); sendSOAPmeldung();">ZWM-AG 7040</button>
                                 <button type="button" class="btn btn-primary" id="TBK-AG" onclick="event.preventDefault(); sendSpriMessage('TBK-AG','7030','AG');">TBK-AG 7030</button>
-                                <button type="button" class="btn btn-primary" id="RUEM-PV" onclick="event.preventDefault(); sendSpriMessage('RUEM-PV','0021','AG');">RUEM-PV 0021</button>
+
                             </form>
                         </div>
                     </div>
@@ -1040,10 +1178,12 @@
                     <form id="annehmenPv" class="needs-validation" novalidate>
                         <select class="form-select" id="auftragegepv" name="auftragegepv" required>
                             <option selected="selected" value="-1">PV-Auftrag wählen</option>
-                            <?php if($arr_AuftragProvider) {
-                                foreach($arr_AuftragProvider as $auftrag) { ?>
+                            <?php if($arr_AuftragRequests) {
+                                foreach($arr_AuftragRequests as $auftrag) {
+                                    if($arr_Auftragstyp[$auftrag['auftrags_typ_id']] == 'PV') {?>
                                     <option value="<?php echo $auftrag['interne_auftrags_id']; ?>"><?php echo $arr_Auftragstyp[$auftrag['auftrags_typ_id']]." / ".$auftrag['externe_auftrags_nr']; ?></option>
                                 <?php }
+                                 }
                             } ?>
                         </select>
                     </form>
@@ -1072,7 +1212,7 @@
                         </div>
                         <div class="card-body">
                             <form id="annehmenPartnerMeldung">
-
+                                <button type="button" class="btn btn-primary" id="RUEM-PV" onclick="event.preventDefault(); sendSpriMessage('RUEM-PV','0021','AG');">RUEM-PV 0021</button>
                             </form>
                         </div>
                     </div>

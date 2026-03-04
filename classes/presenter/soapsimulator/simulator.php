@@ -21,13 +21,17 @@ class Presenter_Soapsimulator_Simulator extends Presenter
         $this->h_simulator = 'sende Auftrag';
         $this->h_simulator_msg = 'Meldungsversand';
 
-        $this->arr_AuftragRequests = array_merge(Auftrag::get_all_by_auftraggeber_nr('AVA1203666'),Auftrag::get_all_by_auftraggeber_nr('90426054'));
+        $this->arr_AuftragRequests = array_merge(Auftrag::get_all_by_auftraggeber_nr('AVA1203666'),Auftrag::get_all_by_auftraggeber_nr('NPS6663021'));
         $this->arr_AuftragProvider = Auftrag::get_all_by_auftraggeber_nr('NPS6663021');
         $this->count_Auftrag = Auftrag::count() + 1;
         $this->arr_vertragsnummern = Geschaeftsfall::get_all_gf_with_vertrag_lineid();
-
+        $this->arr_home_ids = ["G57404EH42129F", "G823476LT45212P", "G47363SH25212Q","G12473XB10981G"];
+        $this->arr_Auftraggeber = [
+            "ava" => ["icc" => "AVA", "agnr" => "AVA1203666", "serial" => "2345766675432", "issuer" => "CN=AVAible S/PRI Simulator, OU=SPRI RS, O=AVAible OA Systems, L=Luebeck, ST=Schleswig-Holstein, C=DE"],
+            "nps" => ["icc" => "NPS", "agnr" => "NPS6663021", "serial" => "6662345775432", "issuer" => "CN=NPS Webservice, OU=SPRI RS, O=ACME Providing Systems, L=Luebeck, ST=Schleswig-Holstein, C=DE"],
+        ];
         $this->arr_Auftragstyp = ['10' => 'NEU', '20' => 'KUE-AG', '30' => 'KUE-LE', '40' => 'AEN-LMAE', '50' => 'LAE', '60' => 'PV', '70' => 'EST', '80' => 'SET', '90' => 'GET'];
-        $this->request_auftrag_bereitstellung_1u1 ='<?xml version="1.0" encoding="UTF-8"?>
+        $this->request_auftrag_bereitstellung_neu ='<?xml version="1.0" encoding="UTF-8"?>
 <SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/">
   <SOAP-ENV:Header>
     <wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd" SOAP-ENV:mustUnderstand="1">
@@ -62,15 +66,15 @@ class Presenter_Soapsimulator_Simulator extends Presenter
           <majorRelease>04</majorRelease>
           <minorRelease>00</minorRelease>
           <signaturId>
-            <issuer>CN=Versatel WITA WebService, OU=IT, O=Versatel, L=Flensburg, ST=SH, C=DE</issuer>
-            <serial>44287f20</serial>
+            <issuer>CN=OA Providing Systems, OU=SPRI RS, O=OAP Systems, L=Luebeck, ST=Schleswig-Holstein, C=DE</issuer>
+            <serial>6662345775432</serial>
           </signaturId>
         </control>
         <auftrag>
           <externeAuftragsnummer></externeAuftragsnummer>
           <auftraggeber>
-            <auftraggebernummer>90426054</auftraggebernummer>
-            <leistungsnummer>90426054-1</leistungsnummer>
+            <auftraggebernummer>NPS6663021</auftraggebernummer>
+            <leistungsnummer>NPSL'.substr(time(),5, strlen(time())).'</leistungsnummer>
           </auftraggeber>
           <geschaeftsfall xmlns:ns4="http://spri.telekom.de/oss/v4/order" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="ns4:BereitstellungType">
             <ansprechpartner>
@@ -83,10 +87,7 @@ class Presenter_Soapsimulator_Simulator extends Presenter
               </auftragsmanagement>
             </ansprechpartner>
             <termine>
-              <auftraggeberWunschtermin>
-                <datum>2025-07-01+02:00</datum>
-                <zeitfenster>28</zeitfenster>
-              </auftraggeberWunschtermin>
+              <auftraggeberWunschtermin></auftraggeberWunschtermin>
             </termine>
             <auftragsposition>
               <produkt xmlns:ns5="http://spri.telekom.de/oss/v4/fttx" xsi:type="ns5:ProduktFTTXType">
@@ -406,7 +407,7 @@ class Presenter_Soapsimulator_Simulator extends Presenter
       </ns2:annehmenAuftragRequest>
   </soap:Body>
 </soap:Envelope>';
-        $this->request_auftrag_bereitstellung_fehler =
+        $this->request_auftrag_neu_konnektivitaet =
             '<?xml version="1.0" encoding="UTF-8"?>
 <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
   <soap:Header>
@@ -436,78 +437,115 @@ class Presenter_Soapsimulator_Simulator extends Presenter
     </wsse:Security>
   </soap:Header>
   <soap:Body xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd" wsu:Id="id-cf96cc70-e6bd-45b6-afc1-e2deccf7821c">
-    <ns3:annehmenAuftragRequest xmlns:ns3="http://spri.telekom.de/oss/v4/envelope" xmlns:ns2="http://spri.telekom.de/oss/v4/message" xmlns:ns4="http://spri.telekom.de/oss/v4/order" xmlns:ns5="http://spri.telekom.de/oss/v4/complex" xmlns:ns6="http://spri.telekom.de/oss/v4/fttx">
-      <control>
-        <zeitstempel>'.date(\DateTimeInterface::RFC3339_EXTENDED).'</zeitstempel>
-        <majorRelease>04</majorRelease>
-        <minorRelease>30</minorRelease>
-        <signaturId>
-          <issuer>CN=AVAible Systems, OU=SPRI RS, O=AVAible Systems, L=Luebeck, ST=Schleswig-Holstein, C=DE</issuer>
-          <serial>2345766675432</serial>
-        </signaturId>
-      </control>
-      <auftrag>
-        <externeAuftragsnummer></externeAuftragsnummer>
-        <auftraggeber>
-          <auftraggebernummer>AVA1203666</auftraggebernummer>
-          <leistungsnummer>AVAL'.substr(time(),5, strlen(time())).'</leistungsnummer>
-        </auftraggeber>
-        <geschaeftsfallArt>Bereitstellung</geschaeftsfallArt>
-        <aenderungskennzeichen></aenderungskennzeichen>
-      </auftrag>
-    </ns3:annehmenAuftragRequest>
-  </soap:Body>
-</soap:Envelope>';
-        $this->request_auftrag_bereitstellung_strukturfehler =
-            '<?xml version="1.0" encoding="UTF-8"?>
-<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
-  <soap:Header>
-    <wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd" soap:mustUnderstand="1">
-      <wsse:BinarySecurityToken EncodingType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary" ValueType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3" wsu:Id="X509-95eb5ead-2678-4fc4-8abd-59f722fb6455">MIIDmzCCAoOgAwIBAgIEcYUGOTANBgkqhkiG9w0BAQsFADB+MQswCQYDVQQGEwJERTEMMAoGA1UECBMDTlJXMQ8wDQYDVQQHEwZEVUVSRU4xHjAcBgNVBAoTFUVuZ2hvdXNlIFN5c3RlbXMgTHRkLjEQMA4GA1UECxMHU1BSSSBSUzEeMBwGA1UEAxMVRW5naG91c2UgU3lzdGVtcyBMdGQuMB4XDTIxMDYyMzE2MzkzMVoXDTMxMDYyMTE2MzkzMVowfjELMAkGA1UEBhMCREUxDDAKBgNVBAgTA05SVzEPMA0GA1UEBxMGRFVFUkVOMR4wHAYDVQQKExVFbmdob3VzZSBTeXN0ZW1zIEx0ZC4xEDAOBgNVBAsTB1NQUkkgUlMxHjAcBgNVBAMTFUVuZ2hvdXNlIFN5c3RlbXMgTHRkLjCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAIpv2i4uPVsJAwMV+5i/JOCsJPGcU8hEaezvS4kdJcELwLCHWiD6DThKb6ou23lk64nkA7bztpsuRQ9mOl8d89RtN/azKpZ13pMVkC7hXHyTr3kBGTPyYEQJq2pPwYJwB2yq/s8eZtPnw/4N2aa+vxmdglTpLy/RFb9wS0sY76ql8PhyIqmJ/voz02AdAdJPgiVypteKHL9qNvBRsP6M58WiS4GCoS4RoaG3SSqhpGzwM3MysmRuttQSN8Leh6ndDOpx2H7CVEEA/oiXgoYm77pIOOHq2p+8r+cMnjk5Q0WFn0vfs4jeWX5UCZjx/2QGQjJa4R1Se1UZkCSoygZt8P8CAwEAAaMhMB8wHQYDVR0OBBYEFOZgtmMVgA9GI9+vM5PWesJ1UUB+MA0GCSqGSIb3DQEBCwUAA4IBAQAbR649eRec/TKCg0AG+m8WO0svI/IH3oUAIaf+TN5CT23U4JJZVoKY8DlO9zlVFaVK7jKjJAdbOqpHIUPbSMwr0TX6DqMuVgGSzs3Zham4Uflv2kslbwDBhiadKbf2dSqkVHt2oVLodzH7lFQ17Y1KWvl8Ss68gcaH6XqXOB54/iCms8zp+SwYLoykNcF0e2WR5BrnQHjQ1wdJeiVnEmFcMXNN9tdhRMt6zIUWDbnwkFQM9ZQfQf+JAj2OmtrtjLqy9fktj2TZByQ7D8fZUFPRSFktb1tA5zM7AoHcqeeDMA/HI/XOC9B7HE44j0xIzJ2OSmLh8l2fgYcxTyPWhKTd</wsse:BinarySecurityToken>
-      <ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#" Id="SIG-da20b0e7-c23b-43a3-b9bb-9b2e9161c421">
-        <ds:SignedInfo>
-          <ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#">
-            <ec:InclusiveNamespaces xmlns:ec="http://www.w3.org/2001/10/xml-exc-c14n#" PrefixList="soap"/>
-          </ds:CanonicalizationMethod>
-          <ds:SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/>
-          <ds:Reference URI="#id-cf96cc70-e6bd-45b6-afc1-e2deccf7821c">
-            <ds:Transforms>
-              <ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
-            </ds:Transforms>
-            <ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>
-            <ds:DigestValue>//pvoOEpKvve/Zk++yiXmJS4cfA=</ds:DigestValue>
-          </ds:Reference>
-        </ds:SignedInfo>
-        <ds:SignatureValue>GaBlpXtlHH+FdtXi+DqiMCqASRa0KtwPlqAyva7H0Z2lqQpUXGH2+z1vPOPAuZ6e79l/MEvyMhiVyjbOGaSuH80/u0fM4JBUTyO2ovKkiN4tSn7nCCPuvki2gu7dk5ZNcy8rKh0p4vQKFpb24/EH2pYiGqve52ar80m06Gy5eqH7hO+lPoc5xzvsyuljNg9eBWdOV2KDdcII+aGjOYZmCYORS4SEtkVF74p+mJfOjb8tAVfUbORA3jZjDkxsKjtv99niI+V2dAyMdCGDjhfg/fI63cFnYuL8T0pJ049syEZBZmh3pvnYG90w/jXf1S1E/7ooNEBtFLHQ+T+dTXirow==</ds:SignatureValue>
-        <ds:KeyInfo Id="KI-cbafba29-fb7f-4140-bc64-243c4d996d1d">
-          <wsse:SecurityTokenReference wsu:Id="STR-8032f2ca-c552-4ae8-b769-83c70090afef">
-            <wsse:Reference URI="#X509-95eb5ead-2678-4fc4-8abd-59f722fb6455" ValueType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3"/>
-          </wsse:SecurityTokenReference>
-        </ds:KeyInfo>
-      </ds:Signature>
-    </wsse:Security>
-  </soap:Header>
-  <soap:Body xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd" wsu:Id="id-cf96cc70-e6bd-45b6-afc1-e2deccf7821c">
-    <ns3:annehmenAuftragRequest xmlns:ns3="http://spri.telekom.de/oss/v4/envelope" xmlns:ns2="http://spri.telekom.de/oss/v4/message" xmlns:ns4="http://spri.telekom.de/oss/v4/order" xmlns:ns5="http://spri.telekom.de/oss/v4/complex" xmlns:ns6="http://spri.telekom.de/oss/v4/fttx">
-      <control>
-        <zeitstempel>'.date(\DateTimeInterface::RFC3339_EXTENDED).'</zeitstempel>
-        <majorRelease>04</majorRelease>
-        <minorRelease>30</minorRelease>
-        <signaturId>
-          <issuer>CN=AVAible Systems, OU=SPRI RS, O=AVAible Systems, L=Luebeck, ST=Schleswig-Holstein, C=DE</issuer>
-          <serial>2345766675432</serial>
-        </signaturId>
-      </control>
-      <order>
-        <externeAuftragsnummer></externeAuftragsnummer>
-        <auftraggeber>
-          <auftraggebernummer>AVA1203666</auftraggebernummer>
-          <leistungsnummer>AVAL'.substr(time(),5, strlen(time())).'</leistungsnummer>
-        </auftraggeber>
-        <geschaeftsfallArt>Bereitstellung</geschaeftsfallArt>
-        <aenderungskennzeichen></aenderungskennzeichen>
-      </order>
-    </ns3:annehmenAuftragRequest>
+    <ns2:annehmenAuftragRequest xmlns:ns2="http://spri.telekom.de/oss/v4/envelope">
+          <control>
+            <zeitstempel>'.date(\DateTimeInterface::RFC3339_EXTENDED).'</zeitstempel>
+            <majorRelease>04</majorRelease>
+            <minorRelease>30</minorRelease>
+            <signaturId>
+              <issuer>CN=OA Providing Systems, OU=SPRI RS, O=OAP Systems, L=Luebeck, ST=Schleswig-Holstein, C=DE</issuer>
+              <serial>6662345775432</serial>
+            </signaturId>
+          </control>
+          <auftrag>
+            <externeAuftragsnummer></externeAuftragsnummer>
+            <auftraggeber>
+              <auftraggebernummer>NPS6663021</auftraggebernummer>
+              <leistungsnummer>NPSL'.substr(time(),5, strlen(time())).'</leistungsnummer>
+            </auftraggeber>
+          <geschaeftsfall xsi:type="ns4:BereitstellungType" xmlns:ns4="http://spri.telekom.de/oss/v4/order" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+               <ansprechpartner>
+                  <auftragsmanagement>
+                     <anrede>1</anrede>
+                     <vorname>Sven</vorname>
+                     <nachname>Rauschning</nachname>
+                     <telefonnummer>04619099223</telefonnummer>
+                     <emailadresse>ooc1und1@1und1.net</emailadresse>
+                  </auftragsmanagement>
+               </ansprechpartner>
+               <termine>
+                  <auftraggeberWunschtermin>
+                     <datum>2025-10-14+02:00</datum>
+                     <zeitfenster>28</zeitfenster>
+                  </auftraggeberWunschtermin>
+               </termine>
+               <auftragsposition>
+                  <produkt xsi:type="ns5:ProduktFTTXType" xmlns:ns5="http://spri.telekom.de/oss/v4/fttx">
+                     <bezeichner>FTTH L2 XGSPON 300 150</bezeichner>
+                  </produkt>
+                  <geschaeftsfallProdukt xsi:type="ns5:FTTXBereitstellungType" xmlns:ns5="http://spri.telekom.de/oss/v4/fttx">
+                     <standortA>
+                        <person>
+                           <anrede>1</anrede>
+                           <vorname>Jörg</vorname>
+                           <nachname>Reinke</nachname>
+                           <telefonnummer>01525 3660070</telefonnummer>
+                        </person>
+                        <strasse>
+                           <strassenname>Nordmeerstraße</strassenname>
+                           <hausnummer>58</hausnummer>
+                        </strasse>
+                        <postleitzahl>23570</postleitzahl>
+                        <ort>
+                           <ortsname>Lübeck</ortsname>
+                        </ort>
+                     </standortA>
+                     <standortVersand>
+                          <person>
+                            <anrede>1</anrede>
+                            <vorname>Eigen</vorname>
+                            <nachname>Tümer</nachname>
+                          </person>
+                          <strasse>
+                            <strassenname>Hauptweg</strassenname>
+                            <hausnummer>2</hausnummer>
+                          </strasse>
+                          <postleitzahl>23558</postleitzahl>
+                          <ort>
+                            <ortsname>Lübeck</ortsname>
+                          </ort>
+                      </standortVersand>
+                     <montageleistung>
+                        <ansprechpartner>
+                           <anrede>1</anrede>
+                           <vorname>Jörg</vorname>
+                           <nachname>Reinke</nachname>
+                           <telefonnummer>01525 3660070</telefonnummer>
+                           <emailadresse>joerg-reinke@live.de</emailadresse>
+                        </ansprechpartner>
+                     </montageleistung>
+                  </geschaeftsfallProdukt>
+                  <position>
+                     <produkt xsi:type="ns5:ProduktFTTXType" xmlns:ns5="http://spri.telekom.de/oss/v4/fttx">
+                        <bezeichner>Konnektivität</bezeichner>
+                     </produkt>
+                  </position>
+                  <position>
+                     <produkt xsi:type="ns5:ProduktFTTXType" xmlns:ns5="http://spri.telekom.de/oss/v4/fttx">
+                        <bezeichner>EtVerhaeltnis#Mieter#</bezeichner>
+                     </produkt>
+                  </position>
+                  <position>
+                     <produkt xsi:type="ns5:ProduktFTTXType" xmlns:ns5="http://spri.telekom.de/oss/v4/fttx">
+                        <bezeichner>EtFestnetz#01265713897#</bezeichner>
+                     </produkt>
+                  </position>
+                  <position>
+                     <produkt xsi:type="ns5:ProduktFTTXType" xmlns:ns5="http://spri.telekom.de/oss/v4/fttx">
+                        <bezeichner>EtMail#eigentuemer@web.de#</bezeichner>
+                     </produkt>
+                  </position>
+                  <position>
+                     <produkt xsi:type="ns5:ProduktFTTXType" xmlns:ns5="http://spri.telekom.de/oss/v4/fttx">
+                        <bezeichner>EtArt#Eigentuemer#</bezeichner>
+                     </produkt>
+                  </position>
+               </auftragsposition>
+            </geschaeftsfall>
+            <geschaeftsfallArt>Bereitstellung</geschaeftsfallArt>
+            <aenderungskennzeichen>Standard</aenderungskennzeichen>
+         </auftrag>
+      </ns2:annehmenAuftragRequest>
   </soap:Body>
 </soap:Envelope>';
         $this->request_auftrag_kuendigung_komplett = '<?xml version="1.0" encoding="UTF-8"?>
@@ -772,52 +810,53 @@ class Presenter_Soapsimulator_Simulator extends Presenter
               </soap:Header>
               <soap:Body xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd" wsu:Id="id-588f15b3-9e45-481c-a7c9-a6612bcf3c43">
                 <ns3:annehmenAuftragRequest xmlns:ns3="http://spri.telekom.de/oss/v4/envelope" xmlns:ns2="http://spri.telekom.de/oss/v4/message" xmlns:ns4="http://spri.telekom.de/oss/v4/order" xmlns:ns5="http://spri.telekom.de/oss/v4/complex" xmlns:ns6="http://spri.telekom.de/oss/v4/fttx">
-                  <control>
-                    <zeitstempel>'.date(\DateTimeInterface::RFC3339_EXTENDED).'</zeitstempel>
-                    <majorRelease>04</majorRelease>
-                    <minorRelease>30</minorRelease>
-                    <signaturId>
-                      <issuer>CN=AVAible Systems, OU=SPRI RS, O=AVAible Systems, L=Luebeck, ST=Schleswig-Holstein, C=DE</issuer>
+      <control>
+        <zeitstempel>2025-12-19T14:18:40.921+01:00</zeitstempel>
+        <majorRelease>04</majorRelease>
+        <minorRelease>30</minorRelease>
+        <signaturId>
+           <issuer>CN=AVAible Systems, OU=SPRI RS, O=AVAible Systems, L=Luebeck, ST=Schleswig-Holstein, C=DE</issuer>
                       <serial>2345766675432</serial>
-                    </signaturId>
-                  </control>
-                  <auftrag>
-                    <externeAuftragsnummer>EXT.14.1.'.sprintf('%02d', $this->count_Auftrag).'</externeAuftragsnummer>
-                    <auftraggeber>
-                      <auftraggebernummer>AVA1203666</auftraggebernummer>
-                      <leistungsnummer>AVAL'.substr(time(),5, strlen(time())).'</leistungsnummer>
-                    </auftraggeber>
-                    <geschaeftsfall xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="ns4:EntstoerungType">
-                      <vertragsnummer></vertragsnummer>
-                      <lineId></lineId>
-                      <ansprechpartner>
-                        <auftragsmanagement>
-                          <anrede>2</anrede>
-                          <nachname>Z_14_1_'.sprintf('%02d', $this->count_Auftrag).'_LE</nachname>
-                          <telefonnummer>0451666999</telefonnummer>
-                        </auftragsmanagement>
-                      </ansprechpartner>
-                      <kontaktEndkunde>
-                          <anrede>2</anrede>
-                          <vorname>Eddy</vorname>
-                          <nachname>Endkunde</nachname>
-                          <emailadresse>eddy@gestoert.de</emailadresse>
-                          <rolle>Endkunde</rolle>
-                          <kontaktaufnahmeErwuenscht>true</kontaktaufnahmeErwuenscht>
-                      </kontaktEndkunde>
-                      <termine>
-                        <auftraggeberWunschtermin></auftraggeberWunschtermin>
-                      </termine>
-                      <stoerungsNrAuftraggeber>666411981'.sprintf('%02d', $this->count_Auftrag).'</stoerungsNrAuftraggeber>
-                      <vorpruefungErfolgt>true</vorpruefungErfolgt>
-                      <stoerungsbeschreibung>Langsames Laden von Abbildungen.
-                      Test der Beschreibung, wie der Zeilenumbruch </stoerungsbeschreibung>
-                      <expressentstoerung>false</expressentstoerung> 
-                    </geschaeftsfall>
-                    <geschaeftsfallArt>Entstoerung</geschaeftsfallArt>
-                    <aenderungskennzeichen></aenderungskennzeichen>
-                  </auftrag>
-                </ns3:annehmenAuftragRequest>
+        </signaturId>
+      </control>
+      <auftrag>
+        <externeAuftragsnummer>EST.Z.14.1.03</externeAuftragsnummer>
+        <auftraggeber>
+          <auftraggebernummer>LE10001061</auftraggebernummer>
+          <leistungsnummer>LLE1001061</leistungsnummer>
+        </auftraggeber>
+        <geschaeftsfall xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="ns4:EntstoerungType">
+          <vertragsnummer></vertragsnummer>
+          <lineId></lineId>
+          <ansprechpartner>
+            <auftragsmanagement>
+              <anrede>2</anrede>
+              <vorname>Esta</vorname>
+              <nachname>Auftragsmanagement</nachname>
+              <telefonnummer>0451666999</telefonnummer>
+              <emailadresse>simulator@auftragsmanagement.de</emailadresse>
+            </auftragsmanagement>
+          </ansprechpartner>
+          <kontaktEndkunde>
+            <anrede>9</anrede>
+            <vorname>E.</vorname>
+            <nachname>zu Entstörender</nachname>
+            <mobilfunknummer>017915118418</mobilfunknummer>
+            <emailadresse>endkunde@entstoerung.net</emailadresse>
+            <kontaktaufnahmeErwuenscht>true</kontaktaufnahmeErwuenscht>
+          </kontaktEndkunde>
+          <termine>
+            <auftraggeberWunschtermin></auftraggeberWunschtermin>
+          </termine>
+          <stoerungsNrAuftraggeber>EST20251219</stoerungsNrAuftraggeber>
+          <vorpruefungErfolgt>true</vorpruefungErfolgt>
+          <stoerungsbeschreibung>Funktionierte der Anschluss bereits zu einem früheren Zeitpunkt? Y Funktioniert die Internetverbindung? N Wenn vorhanden physikalische Parameter: Down-/Upload Ist Leuchtanzeige für Synchronität dauernd grün? N Angeschlossene Kunden-CPE: Fritzbox  Freitext:Die Box ist nicht mehr online. Verkabelung wurde überprüft...  Mal sehen wie weit die Entstörung durchläuft  Störungsart: Komplettausfall Beschreibung der Störung: Keine Synchronisation</stoerungsbeschreibung>
+          <expressentstoerung>false</expressentstoerung>
+        </geschaeftsfall>
+        <geschaeftsfallArt>Entstoerung</geschaeftsfallArt>
+        <aenderungskennzeichen>Standard</aenderungskennzeichen>
+      </auftrag>
+    </ns3:annehmenAuftragRequest>
               </soap:Body>
             </soap:Envelope>';
         $this->request_auftrag_reklamation = '<?xml version="1.0" encoding="UTF-8"?>
@@ -898,7 +937,7 @@ class Presenter_Soapsimulator_Simulator extends Presenter
                 </ns3:annehmenAuftragRequest>
               </soap:Body>
             </soap:Envelope>';
-        $this->request_auftrag_providerwechsel = '<?xml version="1.0" encoding="UTF-8"?>
+        $this->request_auftrag_providerwechsel_ava = '<?xml version="1.0" encoding="UTF-8"?>
             <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
               <soap:Header>
                 <wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd" soap:mustUnderstand="1">
@@ -933,12 +972,100 @@ class Presenter_Soapsimulator_Simulator extends Presenter
                     <majorRelease>04</majorRelease>
                     <minorRelease>30</minorRelease>
                     <signaturId>
-                      <issuer>CN=ACME Providing Systems, OU=SPRI RS, O=OAP Systems, L=Luebeck, ST=Schleswig-Holstein, C=DE</issuer>
+                      <issuer>CN=AVAible Systems, OU=SPRI RS, O=AVAible Systems, L=Luebeck, ST=Schleswig-Holstein, C=DE</issuer>
+                      <serial>2345766675432</serial>
+                    </signaturId>
+                  </control>
+                  <auftrag>
+                    <externeAuftragsnummer>PV.AVA.13.1.'.sprintf('%02d', $this->count_Auftrag).'</externeAuftragsnummer>
+                    <auftraggeber>
+                      <auftraggebernummer>AVA1203666</auftraggebernummer>
+                      <leistungsnummer>AVA7'.substr(time(),5, strlen(time())).'</leistungsnummer>
+                    </auftraggeber>
+                    <geschaeftsfall xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="ns4:ProviderwechselType">
+                      <lineId>DEU.SWL451.0000300666</lineId>
+                      <vorabstimmungId>DEU.PV.SWL.ELR3666</vorabstimmungId>
+                      <ansprechpartner>
+                        <auftragsmanagement>
+                          <anrede>2</anrede>
+                          <nachname>Provider-Neu</nachname>
+                          <telefonnummer>+49 451 61310</telefonnummer>
+                        </auftragsmanagement>
+                      </ansprechpartner>
+                      <termine>
+                        <auftraggeberWunschtermin></auftraggeberWunschtermin>
+                      </termine>
+                      <auftragsposition>
+                        <produkt xsi:type="ns6:ProduktFTTXType">
+                          <bezeichner>FTTH L2 XGSPON 600 300</bezeichner>
+                        </produkt>
+                        <geschaeftsfallProdukt xsi:type="ns6:FTTXProviderwechselType">
+                          <standortA>
+                            <person>
+                              <anrede>2</anrede>
+                              <nachname>Anbieterwechsler</nachname>
+                            </person>
+                            <strasse>
+                              <strassenname>Niels-Bohr-Ring</strassenname>
+                              <hausnummer>15</hausnummer>
+                            </strasse>
+                            <land>de</land>
+                            <postleitzahl>23568</postleitzahl>
+                            <ort>
+                              <ortsname>Lübeck</ortsname>
+                            </ort>
+                          </standortA>
+                        </geschaeftsfallProdukt>
+                      </auftragsposition>
+                    </geschaeftsfall>
+                    <geschaeftsfallArt>Endkundenanbieterwechsel</geschaeftsfallArt>
+                    <aenderungskennzeichen>Standard</aenderungskennzeichen>
+                  </auftrag>
+                </ns3:annehmenAuftragRequest>
+              </soap:Body>
+            </soap:Envelope>';
+
+        $this->request_auftrag_providerwechsel_nps = '<?xml version="1.0" encoding="UTF-8"?>
+            <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+              <soap:Header>
+                <wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd" soap:mustUnderstand="1">
+                  <wsse:BinarySecurityToken EncodingType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary" ValueType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3" wsu:Id="X509-e4795298-c4a8-467a-a10a-638ffb58a38a">MIIDmzCCAoOgAwIBAgIEcYUGOTANBgkqhkiG9w0BAQsFADB+MQswCQYDVQQGEwJERTEMMAoGA1UECBMDTlJXMQ8wDQYDVQQHEwZEVUVSRU4xHjAcBgNVBAoTFUVuZ2hvdXNlIFN5c3RlbXMgTHRkLjEQMA4GA1UECxMHU1BSSSBSUzEeMBwGA1UEAxMVRW5naG91c2UgU3lzdGVtcyBMdGQuMB4XDTIxMDYyMzE2MzkzMVoXDTMxMDYyMTE2MzkzMVowfjELMAkGA1UEBhMCREUxDDAKBgNVBAgTA05SVzEPMA0GA1UEBxMGRFVFUkVOMR4wHAYDVQQKExVFbmdob3VzZSBTeXN0ZW1zIEx0ZC4xEDAOBgNVBAsTB1NQUkkgUlMxHjAcBgNVBAMTFUVuZ2hvdXNlIFN5c3RlbXMgTHRkLjCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAIpv2i4uPVsJAwMV+5i/JOCsJPGcU8hEaezvS4kdJcELwLCHWiD6DThKb6ou23lk64nkA7bztpsuRQ9mOl8d89RtN/azKpZ13pMVkC7hXHyTr3kBGTPyYEQJq2pPwYJwB2yq/s8eZtPnw/4N2aa+vxmdglTpLy/RFb9wS0sY76ql8PhyIqmJ/voz02AdAdJPgiVypteKHL9qNvBRsP6M58WiS4GCoS4RoaG3SSqhpGzwM3MysmRuttQSN8Leh6ndDOpx2H7CVEEA/oiXgoYm77pIOOHq2p+8r+cMnjk5Q0WFn0vfs4jeWX5UCZjx/2QGQjJa4R1Se1UZkCSoygZt8P8CAwEAAaMhMB8wHQYDVR0OBBYEFOZgtmMVgA9GI9+vM5PWesJ1UUB+MA0GCSqGSIb3DQEBCwUAA4IBAQAbR649eRec/TKCg0AG+m8WO0svI/IH3oUAIaf+TN5CT23U4JJZVoKY8DlO9zlVFaVK7jKjJAdbOqpHIUPbSMwr0TX6DqMuVgGSzs3Zham4Uflv2kslbwDBhiadKbf2dSqkVHt2oVLodzH7lFQ17Y1KWvl8Ss68gcaH6XqXOB54/iCms8zp+SwYLoykNcF0e2WR5BrnQHjQ1wdJeiVnEmFcMXNN9tdhRMt6zIUWDbnwkFQM9ZQfQf+JAj2OmtrtjLqy9fktj2TZByQ7D8fZUFPRSFktb1tA5zM7AoHcqeeDMA/HI/XOC9B7HE44j0xIzJ2OSmLh8l2fgYcxTyPWhKTd</wsse:BinarySecurityToken>
+                  <ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#" Id="SIG-e1a666ac-0d63-453e-a54e-e74d9b013cc3">
+                    <ds:SignedInfo>
+                      <ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#">
+                        <ec:InclusiveNamespaces xmlns:ec="http://www.w3.org/2001/10/xml-exc-c14n#" PrefixList="soap"/>
+                      </ds:CanonicalizationMethod>
+                      <ds:SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/>
+                      <ds:Reference URI="#id-e0b059b4-ae41-4af8-b4ee-8a842238f53c">
+                        <ds:Transforms>
+                          <ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+                        </ds:Transforms>
+                        <ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>
+                        <ds:DigestValue>FFvsa6AmFaMM79xs9DmvycAq2Iw=</ds:DigestValue>
+                      </ds:Reference>
+                    </ds:SignedInfo>
+                    <ds:SignatureValue>IJtjurkOfMn3Z8GCABXzNjjXwjtt+A5WtzHkUxjCCP+iKrQzwtCWl10GnXUdshY0afwA07puiBKoBxD0azIL7mjTyQ0Z5o7uXWTg9jo1H/Y9DGRa2iuFhtwnBP1PMlN6zpC1XK4z4K3SNyK+uAUfVk6aTJH7+lNB6gHl3njgrcFeDext6h+XcTT5Q6QawVr5GiZYv7PThBxIbGoH8yDsxn8VRZ8vMUIiRF/+wNKKOLZRPpiyJdC/4S6uyAR68frqpdoqH/T4iLcRiM3eqzN3J4JHZaRPQqU5OFRIBS6C+LspHSTsnQp2gUHvZW5UexrulOJk8waQWAuC5gg+hofTpg==</ds:SignatureValue>
+                    <ds:KeyInfo Id="KI-dc93bdc4-dddf-4b97-89a1-088deb06cdd2">
+                      <wsse:SecurityTokenReference wsu:Id="STR-57f15772-5394-4e45-9c80-d380249bc663">
+                        <wsse:Reference URI="#X509-e4795298-c4a8-467a-a10a-638ffb58a38a" ValueType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3"/>
+                      </wsse:SecurityTokenReference>
+                    </ds:KeyInfo>
+                  </ds:Signature>
+                </wsse:Security>
+              </soap:Header>
+              <soap:Body xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd" wsu:Id="id-e0b059b4-ae41-4af8-b4ee-8a842238f53c">
+                <ns3:annehmenAuftragRequest xmlns:ns3="http://spri.telekom.de/oss/v4/envelope" xmlns:ns2="http://spri.telekom.de/oss/v4/message" xmlns:ns4="http://spri.telekom.de/oss/v4/order" xmlns:ns5="http://spri.telekom.de/oss/v4/complex" xmlns:ns6="http://spri.telekom.de/oss/v4/fttx">
+                  <control>
+                    <zeitstempel>'.date(\DateTimeInterface::RFC3339_EXTENDED).'</zeitstempel>
+                    <majorRelease>04</majorRelease>
+                    <minorRelease>30</minorRelease>
+                    <signaturId>
+                      <issuer>CN=NPS Webservice, OU=SPRI RS, O=ACME Providing Systems, L=Luebeck, ST=Schleswig-Holstein, C=DE</issuer>
                       <serial>6662345775432</serial>
                     </signaturId>
                   </control>
                   <auftrag>
-                    <externeAuftragsnummer>EXT.13.1.'.sprintf('%02d', $this->count_Auftrag).'</externeAuftragsnummer>
+                    <externeAuftragsnummer>NPS.13.1.'.sprintf('%02d', $this->count_Auftrag).'</externeAuftragsnummer>
                     <auftraggeber>
                       <auftraggebernummer>NPS6663021</auftraggebernummer>
                       <leistungsnummer>NPSS'.substr(time(),5, strlen(time())).'</leistungsnummer>
@@ -1012,7 +1139,127 @@ class Presenter_Soapsimulator_Simulator extends Presenter
                     <anschluss>
                       <lineId>DEU.SWL451.0085636</lineId>
                     </anschluss>
-                      <abgebenderProvider><providername>AVAible S/PRI Technology</providername><zustimmungProviderwechsel>J</zustimmungProviderwechsel></abgebenderProvider></meldungsattribute><meldungspositionen><position><meldungscode>0021</meldungscode><meldungstext>Antwort des abgebenden Provider.</meldungstext></position></meldungspositionen></meldungstyp></meldung></ns2:annehmenMeldungRequest></SOAP-ENV:Body></SOAP-ENV:Envelope>';
+                      <abgebenderProvider><providername>AVAible S/PRI Technology</providername><zustimmungProviderwechsel>J</zustimmungProviderwechsel></abgebenderProvider>
+                  </meldungsattribute>
+                  <meldungspositionen>
+                    <position>
+                      <meldungscode>0021</meldungscode>
+                      <meldungstext>Antwort des abgebenden Provider.</meldungstext>
+                    </position>
+                  </meldungspositionen>
+                </meldungstyp>
+              </meldung>
+            </ns2:annehmenMeldungRequest></SOAP-ENV:Body></SOAP-ENV:Envelope>';
+
+        $this->msg_tbk_ag = '<?xml version="1.0" encoding="UTF-8"?>
+            <SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns1="http://spri.telekom.de/oss/v4/message" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ns2="http://spri.telekom.de/oss/v4/envelope"><SOAP-ENV:Header><wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd" SOAP-ENV:mustUnderstand="1"><wsse:BinarySecurityToken xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd" EncodingType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary" wsu:Id="pfx5fc09ad5-5662-ff45-78c2-065dbbb338a5" ValueType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3">MIIExjCCAy6gAwIBAgIUeBxKYJPCU7m1oRgwfZqD8/cEBLAwDQYJKoZIhvcNAQELBQAwbjELMAkGA1UEBhMCREUxGzAZBgNVBAgMElNjaGxlc3dpZy1Ib2xzdGVpbjEQMA4GA1UEBwwHTHVlYmVjazEXMBUGA1UECgwOVHJhdmVOZXR6IEdtYkgxFzAVBgNVBAMMDlRyYXZlTmV0eiBPQVNTMB4XDTI0MDkwNTEwMTI1N1oXDTM0MDkwMzEwMTI1N1owbjELMAkGA1UEBhMCREUxGzAZBgNVBAgMElNjaGxlc3dpZy1Ib2xzdGVpbjEQMA4GA1UEBwwHTHVlYmVjazEXMBUGA1UECgwOVHJhdmVOZXR6IEdtYkgxFzAVBgNVBAMMDlRyYXZlTmV0eiBPQVNTMIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEA5rOc/Og2pJT94iq4jtOG/knXNu7GAosU4f9B8S4rUTQ/63yeZVafN3jIhaIVQQNPsyZtLni8bazsL/xmQ1rP2kmboom1rQYzTKf8c1ZtPOBzvPYveP2Umn0ivSK0PlHGzLS/xAGSWiW5hMO4VDVdLHTpbAIEdHFz7pGZjtIQ3JSUCEyAjfC0CK+0H6TXOeKxSpEDHRUr1aLDEPG/xTOi7j8XuKWFOaRNiCFFvBrbJdSAzwdirHRr2i3CIUvPVwVhbodZH1gsulmWV4ZUMDr9jm6W9XADV0Bj5L0nx74cxnfTUOLlcvzidnCHqj2pW+uJO+VuzxBShq+/n0WeF0nD2aS7tX+3Qkl7obRpPAR2ew3a3x+nM8lj/yHqbQpZ5m2sKRM+f4mwqWn0O4nqSR7EfKHE/kvGoFInh6ynI9uvdiCQ+5vprlxSFLyTj/z5JkZmJuYdb1cyygACfHMm2wEvj6dRgSsu0rYkW3rTVyuNL2jSwY92N//xFZOOqybtjKupAgMBAAGjXDBaMAkGA1UdEwQCMAAwCwYDVR0PBAQDAgXgMCEGA1UdEQQaMBiCFnNydmtzb2EwMS50cmF2ZWtvbS5uZXQwHQYDVR0OBBYEFOizAtzDFkOL+vrRYreIfNbODrQqMA0GCSqGSIb3DQEBCwUAA4IBgQB28C3xrMLC9q71udqqM1jvL2DwitaNACTejkxPTPUpsmEvK6tUa3vTmd0Sny6Al2AZ3exvmb30lmPAlff/srjJMSBOZ3kPlPpQBuq9kkMkmZgUcNYAswQ2tOcTyLfwibkj09aDWQBJqchP1ru5ePBx150vYR/On+diJ9C2Cc8p0qxPOWUP1b2mGESf4jEX0yO7PYg4lMLueVX7dcq2Ea3MFm/6hH2sPRln22J/5CFV2GMsUZKYA/y5t+uLvx0FOqxtT/9drmsHQIRoekOD0ZYALyfJKvKsJ0k0KAO9u2pkB3m6bz9bMwfsp+y/KOtKDIkKnZ2cSmMoCG0ulAJyKGc7yAMWtYPtORj2stsfp8pzUZWNNZv0kdICC6mO7SFvSr0BrQaTLWNTriSMqfT2mCqAU4uy0QR/Muge5ggGUKuD7+SzYQ53OdsCLmYHIlWvv/icUojH8OfEGCfk73vyFqVLYyKpTmzI4vrmtAtNjuC6Y4tNDWefbc+YcVZgis6sQ/M=</wsse:BinarySecurityToken><ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+              <ds:SignedInfo><ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+                <ds:SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/>
+              <ds:Reference URI="#pfxf27cdd6e-6e84-f9b9-3ccb-c3ef1496ed60"><ds:Transforms><ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/></ds:Transforms><ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/><ds:DigestValue>+uF9Gvl6UfLcnzm7ADv+Zu2OfMc=</ds:DigestValue></ds:Reference></ds:SignedInfo><ds:SignatureValue>rx3Y4586SEuNRZGoTPGOMGosUHTMg8bq5gBVdNryBc8nZkG1swjfNlytHBhocLf1zTbCKyst1rOE9mfvjG4Yl2hN07O6Qm9iLBiv57ZbfyPfpWHkCjfETLLAhn9Enkef0hN3hiC+ThgOHivZrxkgGD3MK7djmhNNqgG+LENbxiD0Gz6eI+mfLgbyS3fDsedxa1tN76qGi29uQMK/6Sa+gYYo3Hg9UKa0s/4UMrAR7xHSdi0hLIbx7a8GwPbKUYBmluKRO7i42gmWioqzB6qvxKdGmPmq4cN7/qRoEV8Z1QYLy42vD0sVySuV0h7F3CxkOpYyE1YN6wU+Y7Jqogv60mYrVU0V4fmQWYNYRiGoM2+nwndNintit20S8y34ptXXvBxAMOcP1rr2GbcbNIvWUgk2I4VtJYtP2LjYUuQeF5OAoSNppKugEf8TO9Lhlf0Nu1N4cWmTWqgJaZZIRO1FT6Q7fnQSU00jSGnekIWvgv2QPKZx1raJQOhzYRBaNHia</ds:SignatureValue>
+            <ds:KeyInfo><wsse:SecurityTokenReference><wsse:Reference ValueType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3" URI="#pfx5fc09ad5-5662-ff45-78c2-065dbbb338a5"/></wsse:SecurityTokenReference></ds:KeyInfo></ds:Signature></wsse:Security></SOAP-ENV:Header><SOAP-ENV:Body xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd" wsu:Id="pfxf27cdd6e-6e84-f9b9-3ccb-c3ef1496ed60">
+            <ns2:annehmenMeldungRequest>
+              <control>
+                <zeitstempel>2025-03-13T15:59:16+00:00</zeitstempel><majorRelease>04</majorRelease><minorRelease>30</minorRelease>
+                <signaturId><issuer>CN=AVAible Systems, OU=SPRI RS, O=AVAible Systems, L=Luebeck, ST=Schleswig-Holstein, C=DE</issuer><serial>2345766675432</serial></signaturId>
+              </control>
+              <meldung>
+                <auftragstyp>
+                  <geschaeftsfall>EST</geschaeftsfall>
+                  <aenderungsKennzeichen>Standard</aenderungsKennzeichen>
+                  <geschaeftsfallart>Endkundenanbieterwechsel</geschaeftsfallart>
+                </auftragstyp>
+                <meldungstyp xsi:type="ns1:MeldungstypTBK-AGType">
+                  <meldungsattribute>
+                    <vertragsnummer></vertragsnummer>
+                    <externeAuftragsnummer></externeAuftragsnummer>
+                    <auftraggebernummer></auftraggebernummer>
+                    <termin></termin>
+                  </meldungsattribute>
+                  <meldungspositionen>
+                    <position>
+                      <meldungscode>7030</meldungscode>
+                      <meldungstext>Hinderungsgrund für letzten Endkundentermin ist beseitigt.</meldungstext>
+                    </position>
+                  </meldungspositionen>
+                </meldungstyp>
+              </meldung>
+            </ns2:annehmenMeldungRequest></SOAP-ENV:Body></SOAP-ENV:Envelope>';
+
+        $this->msg_zwm_ag = '<?xml version="1.0" encoding="UTF-8"?>
+            <SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns1="http://spri.telekom.de/oss/v4/message" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ns2="http://spri.telekom.de/oss/v4/envelope"><SOAP-ENV:Header><wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd" SOAP-ENV:mustUnderstand="1"><wsse:BinarySecurityToken xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd" EncodingType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary" wsu:Id="pfx5fc09ad5-5662-ff45-78c2-065dbbb338a5" ValueType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3">MIIExjCCAy6gAwIBAgIUeBxKYJPCU7m1oRgwfZqD8/cEBLAwDQYJKoZIhvcNAQELBQAwbjELMAkGA1UEBhMCREUxGzAZBgNVBAgMElNjaGxlc3dpZy1Ib2xzdGVpbjEQMA4GA1UEBwwHTHVlYmVjazEXMBUGA1UECgwOVHJhdmVOZXR6IEdtYkgxFzAVBgNVBAMMDlRyYXZlTmV0eiBPQVNTMB4XDTI0MDkwNTEwMTI1N1oXDTM0MDkwMzEwMTI1N1owbjELMAkGA1UEBhMCREUxGzAZBgNVBAgMElNjaGxlc3dpZy1Ib2xzdGVpbjEQMA4GA1UEBwwHTHVlYmVjazEXMBUGA1UECgwOVHJhdmVOZXR6IEdtYkgxFzAVBgNVBAMMDlRyYXZlTmV0eiBPQVNTMIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEA5rOc/Og2pJT94iq4jtOG/knXNu7GAosU4f9B8S4rUTQ/63yeZVafN3jIhaIVQQNPsyZtLni8bazsL/xmQ1rP2kmboom1rQYzTKf8c1ZtPOBzvPYveP2Umn0ivSK0PlHGzLS/xAGSWiW5hMO4VDVdLHTpbAIEdHFz7pGZjtIQ3JSUCEyAjfC0CK+0H6TXOeKxSpEDHRUr1aLDEPG/xTOi7j8XuKWFOaRNiCFFvBrbJdSAzwdirHRr2i3CIUvPVwVhbodZH1gsulmWV4ZUMDr9jm6W9XADV0Bj5L0nx74cxnfTUOLlcvzidnCHqj2pW+uJO+VuzxBShq+/n0WeF0nD2aS7tX+3Qkl7obRpPAR2ew3a3x+nM8lj/yHqbQpZ5m2sKRM+f4mwqWn0O4nqSR7EfKHE/kvGoFInh6ynI9uvdiCQ+5vprlxSFLyTj/z5JkZmJuYdb1cyygACfHMm2wEvj6dRgSsu0rYkW3rTVyuNL2jSwY92N//xFZOOqybtjKupAgMBAAGjXDBaMAkGA1UdEwQCMAAwCwYDVR0PBAQDAgXgMCEGA1UdEQQaMBiCFnNydmtzb2EwMS50cmF2ZWtvbS5uZXQwHQYDVR0OBBYEFOizAtzDFkOL+vrRYreIfNbODrQqMA0GCSqGSIb3DQEBCwUAA4IBgQB28C3xrMLC9q71udqqM1jvL2DwitaNACTejkxPTPUpsmEvK6tUa3vTmd0Sny6Al2AZ3exvmb30lmPAlff/srjJMSBOZ3kPlPpQBuq9kkMkmZgUcNYAswQ2tOcTyLfwibkj09aDWQBJqchP1ru5ePBx150vYR/On+diJ9C2Cc8p0qxPOWUP1b2mGESf4jEX0yO7PYg4lMLueVX7dcq2Ea3MFm/6hH2sPRln22J/5CFV2GMsUZKYA/y5t+uLvx0FOqxtT/9drmsHQIRoekOD0ZYALyfJKvKsJ0k0KAO9u2pkB3m6bz9bMwfsp+y/KOtKDIkKnZ2cSmMoCG0ulAJyKGc7yAMWtYPtORj2stsfp8pzUZWNNZv0kdICC6mO7SFvSr0BrQaTLWNTriSMqfT2mCqAU4uy0QR/Muge5ggGUKuD7+SzYQ53OdsCLmYHIlWvv/icUojH8OfEGCfk73vyFqVLYyKpTmzI4vrmtAtNjuC6Y4tNDWefbc+YcVZgis6sQ/M=</wsse:BinarySecurityToken><ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+              <ds:SignedInfo><ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+                <ds:SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/>
+              <ds:Reference URI="#pfxf27cdd6e-6e84-f9b9-3ccb-c3ef1496ed60"><ds:Transforms><ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/></ds:Transforms><ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/><ds:DigestValue>+uF9Gvl6UfLcnzm7ADv+Zu2OfMc=</ds:DigestValue></ds:Reference></ds:SignedInfo><ds:SignatureValue>rx3Y4586SEuNRZGoTPGOMGosUHTMg8bq5gBVdNryBc8nZkG1swjfNlytHBhocLf1zTbCKyst1rOE9mfvjG4Yl2hN07O6Qm9iLBiv57ZbfyPfpWHkCjfETLLAhn9Enkef0hN3hiC+ThgOHivZrxkgGD3MK7djmhNNqgG+LENbxiD0Gz6eI+mfLgbyS3fDsedxa1tN76qGi29uQMK/6Sa+gYYo3Hg9UKa0s/4UMrAR7xHSdi0hLIbx7a8GwPbKUYBmluKRO7i42gmWioqzB6qvxKdGmPmq4cN7/qRoEV8Z1QYLy42vD0sVySuV0h7F3CxkOpYyE1YN6wU+Y7Jqogv60mYrVU0V4fmQWYNYRiGoM2+nwndNintit20S8y34ptXXvBxAMOcP1rr2GbcbNIvWUgk2I4VtJYtP2LjYUuQeF5OAoSNppKugEf8TO9Lhlf0Nu1N4cWmTWqgJaZZIRO1FT6Q7fnQSU00jSGnekIWvgv2QPKZx1raJQOhzYRBaNHia</ds:SignatureValue>
+            <ds:KeyInfo><wsse:SecurityTokenReference><wsse:Reference ValueType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3" URI="#pfx5fc09ad5-5662-ff45-78c2-065dbbb338a5"/></wsse:SecurityTokenReference></ds:KeyInfo></ds:Signature></wsse:Security></SOAP-ENV:Header><SOAP-ENV:Body xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd" wsu:Id="pfxf27cdd6e-6e84-f9b9-3ccb-c3ef1496ed60">
+            <ns2:annehmenMeldungRequest>
+              <control>
+                <zeitstempel>2025-03-13T15:59:16+00:00</zeitstempel><majorRelease>04</majorRelease><minorRelease>30</minorRelease>
+                <signaturId><issuer>CN=AVAible Systems, OU=SPRI RS, O=AVAible Systems, L=Luebeck, ST=Schleswig-Holstein, C=DE</issuer><serial>2345766675432</serial></signaturId>
+              </control>
+              <meldung>
+                <auftragstyp>
+                  <geschaeftsfall></geschaeftsfall>
+                  <aenderungsKennzeichen>Standard</aenderungsKennzeichen>
+                  <geschaeftsfallart></geschaeftsfallart>
+                </auftragstyp>
+                <meldungstyp xsi:type="ns1:MeldungstypZWM-AGType">
+                  <meldungsattribute>
+                    <vertragsnummer></vertragsnummer>
+                    <externeAuftragsnummer></externeAuftragsnummer>
+                    <auftraggebernummer></auftraggebernummer>
+                    <nachricht>Kunde öffnet die Tür nur nach Klopfzeichen! -..---..</nachricht>
+                    <ansprechpartner>
+                      <anrede>2</anrede>
+                      <vorname>Jikuto</vorname>
+                      <nachname>Kuruka</nachname>
+                      <telefonnummer>+49 451 666111</telefonnummer>
+                      <mobilfunknummer>0451 111666</mobilfunknummer>
+                      <emailadresse>jikuto.kuruka@provider.de</emailadresse>
+                      <rolle>Auftragsmanagement</rolle>
+                    </ansprechpartner>
+                  </meldungsattribute>
+                  <meldungspositionen>
+                    <position>
+                      <meldungscode>7040</meldungscode>
+                      <meldungstext>Ergänzende Information zum Auftrag.</meldungstext>
+                    </position>
+                  </meldungspositionen>
+                </meldungstyp>
+              </meldung>
+            </ns2:annehmenMeldungRequest></SOAP-ENV:Body></SOAP-ENV:Envelope>';
+
+        $this->msg_erlm_k = '<?xml version="1.0" encoding="UTF-8"?>
+            <SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns1="http://spri.telekom.de/oss/v4/message" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ns2="http://spri.telekom.de/oss/v4/envelope"><SOAP-ENV:Header><wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd" SOAP-ENV:mustUnderstand="1"><wsse:BinarySecurityToken xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd" EncodingType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary" wsu:Id="pfx5fc09ad5-5662-ff45-78c2-065dbbb338a5" ValueType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3">MIIExjCCAy6gAwIBAgIUeBxKYJPCU7m1oRgwfZqD8/cEBLAwDQYJKoZIhvcNAQELBQAwbjELMAkGA1UEBhMCREUxGzAZBgNVBAgMElNjaGxlc3dpZy1Ib2xzdGVpbjEQMA4GA1UEBwwHTHVlYmVjazEXMBUGA1UECgwOVHJhdmVOZXR6IEdtYkgxFzAVBgNVBAMMDlRyYXZlTmV0eiBPQVNTMB4XDTI0MDkwNTEwMTI1N1oXDTM0MDkwMzEwMTI1N1owbjELMAkGA1UEBhMCREUxGzAZBgNVBAgMElNjaGxlc3dpZy1Ib2xzdGVpbjEQMA4GA1UEBwwHTHVlYmVjazEXMBUGA1UECgwOVHJhdmVOZXR6IEdtYkgxFzAVBgNVBAMMDlRyYXZlTmV0eiBPQVNTMIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEA5rOc/Og2pJT94iq4jtOG/knXNu7GAosU4f9B8S4rUTQ/63yeZVafN3jIhaIVQQNPsyZtLni8bazsL/xmQ1rP2kmboom1rQYzTKf8c1ZtPOBzvPYveP2Umn0ivSK0PlHGzLS/xAGSWiW5hMO4VDVdLHTpbAIEdHFz7pGZjtIQ3JSUCEyAjfC0CK+0H6TXOeKxSpEDHRUr1aLDEPG/xTOi7j8XuKWFOaRNiCFFvBrbJdSAzwdirHRr2i3CIUvPVwVhbodZH1gsulmWV4ZUMDr9jm6W9XADV0Bj5L0nx74cxnfTUOLlcvzidnCHqj2pW+uJO+VuzxBShq+/n0WeF0nD2aS7tX+3Qkl7obRpPAR2ew3a3x+nM8lj/yHqbQpZ5m2sKRM+f4mwqWn0O4nqSR7EfKHE/kvGoFInh6ynI9uvdiCQ+5vprlxSFLyTj/z5JkZmJuYdb1cyygACfHMm2wEvj6dRgSsu0rYkW3rTVyuNL2jSwY92N//xFZOOqybtjKupAgMBAAGjXDBaMAkGA1UdEwQCMAAwCwYDVR0PBAQDAgXgMCEGA1UdEQQaMBiCFnNydmtzb2EwMS50cmF2ZWtvbS5uZXQwHQYDVR0OBBYEFOizAtzDFkOL+vrRYreIfNbODrQqMA0GCSqGSIb3DQEBCwUAA4IBgQB28C3xrMLC9q71udqqM1jvL2DwitaNACTejkxPTPUpsmEvK6tUa3vTmd0Sny6Al2AZ3exvmb30lmPAlff/srjJMSBOZ3kPlPpQBuq9kkMkmZgUcNYAswQ2tOcTyLfwibkj09aDWQBJqchP1ru5ePBx150vYR/On+diJ9C2Cc8p0qxPOWUP1b2mGESf4jEX0yO7PYg4lMLueVX7dcq2Ea3MFm/6hH2sPRln22J/5CFV2GMsUZKYA/y5t+uLvx0FOqxtT/9drmsHQIRoekOD0ZYALyfJKvKsJ0k0KAO9u2pkB3m6bz9bMwfsp+y/KOtKDIkKnZ2cSmMoCG0ulAJyKGc7yAMWtYPtORj2stsfp8pzUZWNNZv0kdICC6mO7SFvSr0BrQaTLWNTriSMqfT2mCqAU4uy0QR/Muge5ggGUKuD7+SzYQ53OdsCLmYHIlWvv/icUojH8OfEGCfk73vyFqVLYyKpTmzI4vrmtAtNjuC6Y4tNDWefbc+YcVZgis6sQ/M=</wsse:BinarySecurityToken><ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+              <ds:SignedInfo><ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+                <ds:SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/>
+              <ds:Reference URI="#pfxf27cdd6e-6e84-f9b9-3ccb-c3ef1496ed60"><ds:Transforms><ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/></ds:Transforms><ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/><ds:DigestValue>+uF9Gvl6UfLcnzm7ADv+Zu2OfMc=</ds:DigestValue></ds:Reference></ds:SignedInfo><ds:SignatureValue>rx3Y4586SEuNRZGoTPGOMGosUHTMg8bq5gBVdNryBc8nZkG1swjfNlytHBhocLf1zTbCKyst1rOE9mfvjG4Yl2hN07O6Qm9iLBiv57ZbfyPfpWHkCjfETLLAhn9Enkef0hN3hiC+ThgOHivZrxkgGD3MK7djmhNNqgG+LENbxiD0Gz6eI+mfLgbyS3fDsedxa1tN76qGi29uQMK/6Sa+gYYo3Hg9UKa0s/4UMrAR7xHSdi0hLIbx7a8GwPbKUYBmluKRO7i42gmWioqzB6qvxKdGmPmq4cN7/qRoEV8Z1QYLy42vD0sVySuV0h7F3CxkOpYyE1YN6wU+Y7Jqogv60mYrVU0V4fmQWYNYRiGoM2+nwndNintit20S8y34ptXXvBxAMOcP1rr2GbcbNIvWUgk2I4VtJYtP2LjYUuQeF5OAoSNppKugEf8TO9Lhlf0Nu1N4cWmTWqgJaZZIRO1FT6Q7fnQSU00jSGnekIWvgv2QPKZx1raJQOhzYRBaNHia</ds:SignatureValue>
+            <ds:KeyInfo><wsse:SecurityTokenReference><wsse:Reference ValueType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3" URI="#pfx5fc09ad5-5662-ff45-78c2-065dbbb338a5"/></wsse:SecurityTokenReference></ds:KeyInfo></ds:Signature></wsse:Security></SOAP-ENV:Header><SOAP-ENV:Body xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd" wsu:Id="pfxf27cdd6e-6e84-f9b9-3ccb-c3ef1496ed60">
+            <ns2:annehmenMeldungRequest>
+              <control>
+                <zeitstempel>2025-03-13T15:59:16+00:00</zeitstempel><majorRelease>04</majorRelease><minorRelease>30</minorRelease>
+                <signaturId><issuer>CN=AVAible Systems, OU=SPRI RS, O=AVAible Systems, L=Luebeck, ST=Schleswig-Holstein, C=DE</issuer><serial>2345766675432</serial></signaturId>
+              </control>
+              <meldung>
+                <auftragstyp>
+                  <geschaeftsfall>LAE</geschaeftsfall>
+                  <aenderungsKennzeichen>Standard</aenderungsKennzeichen>
+                  <geschaeftsfallart>Aenderung</geschaeftsfallart>
+                </auftragstyp>
+                <meldungstyp xsi:type="ns1:MeldungstypERLM-KType">
+                  <meldungsattribute>
+                    <vertragsnummer></vertragsnummer>
+                    <externeAuftragsnummer></externeAuftragsnummer>
+                    <auftraggebernummer></auftraggebernummer>
+                  </meldungsattribute>
+                  <meldungspositionen>
+                    <position>
+                      <meldungscode>0015</meldungscode>
+                      <meldungstext>Antwort des abgebenden Provider.</meldungstext>
+                    </position>
+                  </meldungspositionen>
+                </meldungstyp>
+              </meldung>
+            </ns2:annehmenMeldungRequest></SOAP-ENV:Body></SOAP-ENV:Envelope>';
 
         $this->request_auftrag_diagnose_get = '<?xml version="1.0" encoding="UTF-8"?>
             <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
@@ -1054,7 +1301,7 @@ class Presenter_Soapsimulator_Simulator extends Presenter
                     </signaturId>
                   </control>
                   <auftrag>
-                    <externeAuftragsnummer>EXT.14.1.'.sprintf('%02d', $this->count_Auftrag).'</externeAuftragsnummer>
+                    <externeAuftragsnummer>DIAG.GET.1.'.sprintf('%02d', $this->count_Auftrag).'</externeAuftragsnummer>
                     <auftraggeber>
                       <auftraggebernummer>AVA1203666</auftraggebernummer>
                       <leistungsnummer>AVAL'.substr(time(),5, strlen(time())).'</leistungsnummer>
@@ -1064,7 +1311,7 @@ class Presenter_Soapsimulator_Simulator extends Presenter
                       <lineId></lineId>
                       <auftragsposition>
                         <parameter>
-                          <operation>ONTStatus</operation>
+                          <operation>GetPortStatus</operation>
                         </parameter>
                       </auftragsposition>
                     </geschaeftsfall>
@@ -1114,7 +1361,7 @@ class Presenter_Soapsimulator_Simulator extends Presenter
                     </signaturId>
                   </control>
                   <auftrag>
-                    <externeAuftragsnummer>EXT.16.1.'.sprintf('%02d', $this->count_Auftrag).'</externeAuftragsnummer>
+                    <externeAuftragsnummer>DIAG.SET.1.'.sprintf('%02d', $this->count_Auftrag).'</externeAuftragsnummer>
                     <auftraggeber>
                       <auftraggebernummer>AVA1203666</auftraggebernummer>
                       <leistungsnummer>AVAL'.substr(time(),5, strlen(time())).'</leistungsnummer>
@@ -1125,7 +1372,8 @@ class Presenter_Soapsimulator_Simulator extends Presenter
                       <auftragsposition>
                         <parameter>
                           <operation>registrierenONT</operation>
-                          <operation>PM:AVMD462DG6D4 GNXS05607DA0 GNXS607DA005</operation>
+                          <operation>PM:AVMG7B436A29</operation>
+                          <operation>HiD:G47363SH25212Q</operation>
                         </parameter>
                       </auftragsposition>
                     </geschaeftsfall>
@@ -1196,40 +1444,275 @@ class Presenter_Soapsimulator_Simulator extends Presenter
               </soap:Body>
             </soap:Envelope>';
 
-        $this->request_wrapper_anfang = '<?xml version="1.0" encoding="UTF-8"?>
-<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:message="http://spri.telekom.de/oss/v4/message" xmlns:order="http://spri.telekom.de/oss/v4/order" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-  <soap:Header>
-    <wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd" soap:mustUnderstand="1">
-      <wsse:BinarySecurityToken EncodingType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary" ValueType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3" wsu:Id="X509-95eb5ead-2678-4fc4-8abd-59f722fb6455">MIIDmzCCAoOgAwIBAgIEcYUGOTANBgkqhkiG9w0BAQsFADB+MQswCQYDVQQGEwJERTEMMAoGA1UECBMDTlJXMQ8wDQYDVQQHEwZEVUVSRU4xHjAcBgNVBAoTFUVuZ2hvdXNlIFN5c3RlbXMgTHRkLjEQMA4GA1UECxMHU1BSSSBSUzEeMBwGA1UEAxMVRW5naG91c2UgU3lzdGVtcyBMdGQuMB4XDTIxMDYyMzE2MzkzMVoXDTMxMDYyMTE2MzkzMVowfjELMAkGA1UEBhMCREUxDDAKBgNVBAgTA05SVzEPMA0GA1UEBxMGRFVFUkVOMR4wHAYDVQQKExVFbmdob3VzZSBTeXN0ZW1zIEx0ZC4xEDAOBgNVBAsTB1NQUkkgUlMxHjAcBgNVBAMTFUVuZ2hvdXNlIFN5c3RlbXMgTHRkLjCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAIpv2i4uPVsJAwMV+5i/JOCsJPGcU8hEaezvS4kdJcELwLCHWiD6DThKb6ou23lk64nkA7bztpsuRQ9mOl8d89RtN/azKpZ13pMVkC7hXHyTr3kBGTPyYEQJq2pPwYJwB2yq/s8eZtPnw/4N2aa+vxmdglTpLy/RFb9wS0sY76ql8PhyIqmJ/voz02AdAdJPgiVypteKHL9qNvBRsP6M58WiS4GCoS4RoaG3SSqhpGzwM3MysmRuttQSN8Leh6ndDOpx2H7CVEEA/oiXgoYm77pIOOHq2p+8r+cMnjk5Q0WFn0vfs4jeWX5UCZjx/2QGQjJa4R1Se1UZkCSoygZt8P8CAwEAAaMhMB8wHQYDVR0OBBYEFOZgtmMVgA9GI9+vM5PWesJ1UUB+MA0GCSqGSIb3DQEBCwUAA4IBAQAbR649eRec/TKCg0AG+m8WO0svI/IH3oUAIaf+TN5CT23U4JJZVoKY8DlO9zlVFaVK7jKjJAdbOqpHIUPbSMwr0TX6DqMuVgGSzs3Zham4Uflv2kslbwDBhiadKbf2dSqkVHt2oVLodzH7lFQ17Y1KWvl8Ss68gcaH6XqXOB54/iCms8zp+SwYLoykNcF0e2WR5BrnQHjQ1wdJeiVnEmFcMXNN9tdhRMt6zIUWDbnwkFQM9ZQfQf+JAj2OmtrtjLqy9fktj2TZByQ7D8fZUFPRSFktb1tA5zM7AoHcqeeDMA/HI/XOC9B7HE44j0xIzJ2OSmLh8l2fgYcxTyPWhKTd</wsse:BinarySecurityToken>
-      <ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#" Id="SIG-da20b0e7-c23b-43a3-b9bb-9b2e9161c421">
-        <ds:SignedInfo>
-          <ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#">
-            <ec:InclusiveNamespaces xmlns:ec="http://www.w3.org/2001/10/xml-exc-c14n#" PrefixList="soap"/>
-          </ds:CanonicalizationMethod>
-          <ds:SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/>
-          <ds:Reference URI="#id-cf96cc70-e6bd-45b6-afc1-e2deccf7821c">
-            <ds:Transforms>
-              <ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
-            </ds:Transforms>
-            <ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>
-            <ds:DigestValue>//pvoOEpKvve/Zk++yiXmJS4cfA=</ds:DigestValue>
-          </ds:Reference>
-        </ds:SignedInfo>
-        <ds:SignatureValue>GaBlpXtlHH+FdtXi+DqiMCqASRa0KtwPlqAyva7H0Z2lqQpUXGH2+z1vPOPAuZ6e79l/MEvyMhiVyjbOGaSuH80/u0fM4JBUTyO2ovKkiN4tSn7nCCPuvki2gu7dk5ZNcy8rKh0p4vQKFpb24/EH2pYiGqve52ar80m06Gy5eqH7hO+lPoc5xzvsyuljNg9eBWdOV2KDdcII+aGjOYZmCYORS4SEtkVF74p+mJfOjb8tAVfUbORA3jZjDkxsKjtv99niI+V2dAyMdCGDjhfg/fI63cFnYuL8T0pJ049syEZBZmh3pvnYG90w/jXf1S1E/7ooNEBtFLHQ+T+dTXirow==</ds:SignatureValue>
-        <ds:KeyInfo Id="KI-cbafba29-fb7f-4140-bc64-243c4d996d1d">
-          <wsse:SecurityTokenReference wsu:Id="STR-8032f2ca-c552-4ae8-b769-83c70090afef">
-            <wsse:Reference URI="#X509-95eb5ead-2678-4fc4-8abd-59f722fb6455" ValueType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3"/>
-          </wsse:SecurityTokenReference>
-        </ds:KeyInfo>
-      </ds:Signature>
-    </wsse:Security>
-  </soap:Header>
-  <soap:Body xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd" wsu:Id="id-cf96cc70-e6bd-45b6-afc1-e2deccf7821c">';
+        $this->request_auftrag_providerwechsel_nps = '<?xml version="1.0" encoding="UTF-8"?>
+            <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+              <soap:Header>
+                <wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd" soap:mustUnderstand="1">
+                  <wsse:BinarySecurityToken EncodingType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary" ValueType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3" wsu:Id="X509-e4795298-c4a8-467a-a10a-638ffb58a38a">MIIDmzCCAoOgAwIBAgIEcYUGOTANBgkqhkiG9w0BAQsFADB+MQswCQYDVQQGEwJERTEMMAoGA1UECBMDTlJXMQ8wDQYDVQQHEwZEVUVSRU4xHjAcBgNVBAoTFUVuZ2hvdXNlIFN5c3RlbXMgTHRkLjEQMA4GA1UECxMHU1BSSSBSUzEeMBwGA1UEAxMVRW5naG91c2UgU3lzdGVtcyBMdGQuMB4XDTIxMDYyMzE2MzkzMVoXDTMxMDYyMTE2MzkzMVowfjELMAkGA1UEBhMCREUxDDAKBgNVBAgTA05SVzEPMA0GA1UEBxMGRFVFUkVOMR4wHAYDVQQKExVFbmdob3VzZSBTeXN0ZW1zIEx0ZC4xEDAOBgNVBAsTB1NQUkkgUlMxHjAcBgNVBAMTFUVuZ2hvdXNlIFN5c3RlbXMgTHRkLjCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAIpv2i4uPVsJAwMV+5i/JOCsJPGcU8hEaezvS4kdJcELwLCHWiD6DThKb6ou23lk64nkA7bztpsuRQ9mOl8d89RtN/azKpZ13pMVkC7hXHyTr3kBGTPyYEQJq2pPwYJwB2yq/s8eZtPnw/4N2aa+vxmdglTpLy/RFb9wS0sY76ql8PhyIqmJ/voz02AdAdJPgiVypteKHL9qNvBRsP6M58WiS4GCoS4RoaG3SSqhpGzwM3MysmRuttQSN8Leh6ndDOpx2H7CVEEA/oiXgoYm77pIOOHq2p+8r+cMnjk5Q0WFn0vfs4jeWX5UCZjx/2QGQjJa4R1Se1UZkCSoygZt8P8CAwEAAaMhMB8wHQYDVR0OBBYEFOZgtmMVgA9GI9+vM5PWesJ1UUB+MA0GCSqGSIb3DQEBCwUAA4IBAQAbR649eRec/TKCg0AG+m8WO0svI/IH3oUAIaf+TN5CT23U4JJZVoKY8DlO9zlVFaVK7jKjJAdbOqpHIUPbSMwr0TX6DqMuVgGSzs3Zham4Uflv2kslbwDBhiadKbf2dSqkVHt2oVLodzH7lFQ17Y1KWvl8Ss68gcaH6XqXOB54/iCms8zp+SwYLoykNcF0e2WR5BrnQHjQ1wdJeiVnEmFcMXNN9tdhRMt6zIUWDbnwkFQM9ZQfQf+JAj2OmtrtjLqy9fktj2TZByQ7D8fZUFPRSFktb1tA5zM7AoHcqeeDMA/HI/XOC9B7HE44j0xIzJ2OSmLh8l2fgYcxTyPWhKTd</wsse:BinarySecurityToken>
+                  <ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#" Id="SIG-e1a666ac-0d63-453e-a54e-e74d9b013cc3">
+                    <ds:SignedInfo>
+                      <ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#">
+                        <ec:InclusiveNamespaces xmlns:ec="http://www.w3.org/2001/10/xml-exc-c14n#" PrefixList="soap"/>
+                      </ds:CanonicalizationMethod>
+                      <ds:SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/>
+                      <ds:Reference URI="#id-e0b059b4-ae41-4af8-b4ee-8a842238f53c">
+                        <ds:Transforms>
+                          <ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+                        </ds:Transforms>
+                        <ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>
+                        <ds:DigestValue>FFvsa6AmFaMM79xs9DmvycAq2Iw=</ds:DigestValue>
+                      </ds:Reference>
+                    </ds:SignedInfo>
+                    <ds:SignatureValue>IJtjurkOfMn3Z8GCABXzNjjXwjtt+A5WtzHkUxjCCP+iKrQzwtCWl10GnXUdshY0afwA07puiBKoBxD0azIL7mjTyQ0Z5o7uXWTg9jo1H/Y9DGRa2iuFhtwnBP1PMlN6zpC1XK4z4K3SNyK+uAUfVk6aTJH7+lNB6gHl3njgrcFeDext6h+XcTT5Q6QawVr5GiZYv7PThBxIbGoH8yDsxn8VRZ8vMUIiRF/+wNKKOLZRPpiyJdC/4S6uyAR68frqpdoqH/T4iLcRiM3eqzN3J4JHZaRPQqU5OFRIBS6C+LspHSTsnQp2gUHvZW5UexrulOJk8waQWAuC5gg+hofTpg==</ds:SignatureValue>
+                    <ds:KeyInfo Id="KI-dc93bdc4-dddf-4b97-89a1-088deb06cdd2">
+                      <wsse:SecurityTokenReference wsu:Id="STR-57f15772-5394-4e45-9c80-d380249bc663">
+                        <wsse:Reference URI="#X509-e4795298-c4a8-467a-a10a-638ffb58a38a" ValueType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3"/>
+                      </wsse:SecurityTokenReference>
+                    </ds:KeyInfo>
+                  </ds:Signature>
+                </wsse:Security>
+              </soap:Header>
+              <soap:Body xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd" wsu:Id="id-e0b059b4-ae41-4af8-b4ee-8a842238f53c">
+                <ns3:annehmenAuftragRequest xmlns:ns3="http://spri.telekom.de/oss/v4/envelope" xmlns:ns2="http://spri.telekom.de/oss/v4/message" xmlns:ns4="http://spri.telekom.de/oss/v4/order" xmlns:ns5="http://spri.telekom.de/oss/v4/complex" xmlns:ns6="http://spri.telekom.de/oss/v4/fttx">
+                  <control>
+                    <zeitstempel>'.date(\DateTimeInterface::RFC3339_EXTENDED).'</zeitstempel>
+                    <majorRelease>04</majorRelease>
+                    <minorRelease>30</minorRelease>
+                    <signaturId>
+                      <issuer>CN=NPS Webservice, OU=SPRI RS, O=ACME Providing Systems, L=Luebeck, ST=Schleswig-Holstein, C=DE</issuer>
+                      <serial>6662345775432</serial>
+                    </signaturId>
+                  </control>
+                  <auftrag></auftrag>
+                </ns3:annehmenAuftragRequest>
+              </soap:Body>
+            </soap:Envelope>';
 
-        $this->request_wrapper_ende =
-  '</soap:Body>
-</soap:Envelope>';
+        $this->request_auftrag_ava = '<?xml version="1.0" encoding="UTF-8"?>
+            <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+              <soap:Header>
+                <wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd" soap:mustUnderstand="1">
+                  <wsse:BinarySecurityToken EncodingType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary" ValueType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3" wsu:Id="X509-e4795298-c4a8-467a-a10a-638ffb58a38a">MIIDmzCCAoOgAwIBAgIEcYUGOTANBgkqhkiG9w0BAQsFADB+MQswCQYDVQQGEwJERTEMMAoGA1UECBMDTlJXMQ8wDQYDVQQHEwZEVUVSRU4xHjAcBgNVBAoTFUVuZ2hvdXNlIFN5c3RlbXMgTHRkLjEQMA4GA1UECxMHU1BSSSBSUzEeMBwGA1UEAxMVRW5naG91c2UgU3lzdGVtcyBMdGQuMB4XDTIxMDYyMzE2MzkzMVoXDTMxMDYyMTE2MzkzMVowfjELMAkGA1UEBhMCREUxDDAKBgNVBAgTA05SVzEPMA0GA1UEBxMGRFVFUkVOMR4wHAYDVQQKExVFbmdob3VzZSBTeXN0ZW1zIEx0ZC4xEDAOBgNVBAsTB1NQUkkgUlMxHjAcBgNVBAMTFUVuZ2hvdXNlIFN5c3RlbXMgTHRkLjCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAIpv2i4uPVsJAwMV+5i/JOCsJPGcU8hEaezvS4kdJcELwLCHWiD6DThKb6ou23lk64nkA7bztpsuRQ9mOl8d89RtN/azKpZ13pMVkC7hXHyTr3kBGTPyYEQJq2pPwYJwB2yq/s8eZtPnw/4N2aa+vxmdglTpLy/RFb9wS0sY76ql8PhyIqmJ/voz02AdAdJPgiVypteKHL9qNvBRsP6M58WiS4GCoS4RoaG3SSqhpGzwM3MysmRuttQSN8Leh6ndDOpx2H7CVEEA/oiXgoYm77pIOOHq2p+8r+cMnjk5Q0WFn0vfs4jeWX5UCZjx/2QGQjJa4R1Se1UZkCSoygZt8P8CAwEAAaMhMB8wHQYDVR0OBBYEFOZgtmMVgA9GI9+vM5PWesJ1UUB+MA0GCSqGSIb3DQEBCwUAA4IBAQAbR649eRec/TKCg0AG+m8WO0svI/IH3oUAIaf+TN5CT23U4JJZVoKY8DlO9zlVFaVK7jKjJAdbOqpHIUPbSMwr0TX6DqMuVgGSzs3Zham4Uflv2kslbwDBhiadKbf2dSqkVHt2oVLodzH7lFQ17Y1KWvl8Ss68gcaH6XqXOB54/iCms8zp+SwYLoykNcF0e2WR5BrnQHjQ1wdJeiVnEmFcMXNN9tdhRMt6zIUWDbnwkFQM9ZQfQf+JAj2OmtrtjLqy9fktj2TZByQ7D8fZUFPRSFktb1tA5zM7AoHcqeeDMA/HI/XOC9B7HE44j0xIzJ2OSmLh8l2fgYcxTyPWhKTd</wsse:BinarySecurityToken>
+                  <ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#" Id="SIG-e1a666ac-0d63-453e-a54e-e74d9b013cc3">
+                    <ds:SignedInfo>
+                      <ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#">
+                        <ec:InclusiveNamespaces xmlns:ec="http://www.w3.org/2001/10/xml-exc-c14n#" PrefixList="soap"/>
+                      </ds:CanonicalizationMethod>
+                      <ds:SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/>
+                      <ds:Reference URI="#id-e0b059b4-ae41-4af8-b4ee-8a842238f53c">
+                        <ds:Transforms>
+                          <ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+                        </ds:Transforms>
+                        <ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>
+                        <ds:DigestValue>FFvsa6AmFaMM79xs9DmvycAq2Iw=</ds:DigestValue>
+                      </ds:Reference>
+                    </ds:SignedInfo>
+                    <ds:SignatureValue>IJtjurkOfMn3Z8GCABXzNjjXwjtt+A5WtzHkUxjCCP+iKrQzwtCWl10GnXUdshY0afwA07puiBKoBxD0azIL7mjTyQ0Z5o7uXWTg9jo1H/Y9DGRa2iuFhtwnBP1PMlN6zpC1XK4z4K3SNyK+uAUfVk6aTJH7+lNB6gHl3njgrcFeDext6h+XcTT5Q6QawVr5GiZYv7PThBxIbGoH8yDsxn8VRZ8vMUIiRF/+wNKKOLZRPpiyJdC/4S6uyAR68frqpdoqH/T4iLcRiM3eqzN3J4JHZaRPQqU5OFRIBS6C+LspHSTsnQp2gUHvZW5UexrulOJk8waQWAuC5gg+hofTpg==</ds:SignatureValue>
+                    <ds:KeyInfo Id="KI-dc93bdc4-dddf-4b97-89a1-088deb06cdd2">
+                      <wsse:SecurityTokenReference wsu:Id="STR-57f15772-5394-4e45-9c80-d380249bc663">
+                        <wsse:Reference URI="#X509-e4795298-c4a8-467a-a10a-638ffb58a38a" ValueType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3"/>
+                      </wsse:SecurityTokenReference>
+                    </ds:KeyInfo>
+                  </ds:Signature>
+                </wsse:Security>
+              </soap:Header>
+              <soap:Body xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd" wsu:Id="id-e0b059b4-ae41-4af8-b4ee-8a842238f53c">
+                <ns3:annehmenAuftragRequest xmlns:ns3="http://spri.telekom.de/oss/v4/envelope" xmlns:ns2="http://spri.telekom.de/oss/v4/message" xmlns:ns4="http://spri.telekom.de/oss/v4/order" xmlns:ns5="http://spri.telekom.de/oss/v4/complex" xmlns:ns6="http://spri.telekom.de/oss/v4/fttx">
+                  <control>
+                    <zeitstempel>'.date(\DateTimeInterface::RFC3339_EXTENDED).'</zeitstempel>
+                    <majorRelease>04</majorRelease>
+                    <minorRelease>30</minorRelease>
+                    <signaturId>
+                      <issuer>CN=AVAible S/PRI Simulator, OU=SPRI RS, O=AVAible OA Systems, L=Luebeck, ST=Schleswig-Holstein, C=DE</issuer>
+                      <serial>2345766675432</serial>
+                    </signaturId>
+                  </control>
+                  <auftrag></auftrag>
+                </ns3:annehmenAuftragRequest>
+              </soap:Body>
+            </soap:Envelope>';
 
+        $this->request_auftrag_nps = '<?xml version="1.0" encoding="UTF-8"?>
+            <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+              <soap:Header>
+                <wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd" soap:mustUnderstand="1">
+                  <wsse:BinarySecurityToken EncodingType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary" ValueType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3" wsu:Id="X509-e4795298-c4a8-467a-a10a-638ffb58a38a">MIIDmzCCAoOgAwIBAgIEcYUGOTANBgkqhkiG9w0BAQsFADB+MQswCQYDVQQGEwJERTEMMAoGA1UECBMDTlJXMQ8wDQYDVQQHEwZEVUVSRU4xHjAcBgNVBAoTFUVuZ2hvdXNlIFN5c3RlbXMgTHRkLjEQMA4GA1UECxMHU1BSSSBSUzEeMBwGA1UEAxMVRW5naG91c2UgU3lzdGVtcyBMdGQuMB4XDTIxMDYyMzE2MzkzMVoXDTMxMDYyMTE2MzkzMVowfjELMAkGA1UEBhMCREUxDDAKBgNVBAgTA05SVzEPMA0GA1UEBxMGRFVFUkVOMR4wHAYDVQQKExVFbmdob3VzZSBTeXN0ZW1zIEx0ZC4xEDAOBgNVBAsTB1NQUkkgUlMxHjAcBgNVBAMTFUVuZ2hvdXNlIFN5c3RlbXMgTHRkLjCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAIpv2i4uPVsJAwMV+5i/JOCsJPGcU8hEaezvS4kdJcELwLCHWiD6DThKb6ou23lk64nkA7bztpsuRQ9mOl8d89RtN/azKpZ13pMVkC7hXHyTr3kBGTPyYEQJq2pPwYJwB2yq/s8eZtPnw/4N2aa+vxmdglTpLy/RFb9wS0sY76ql8PhyIqmJ/voz02AdAdJPgiVypteKHL9qNvBRsP6M58WiS4GCoS4RoaG3SSqhpGzwM3MysmRuttQSN8Leh6ndDOpx2H7CVEEA/oiXgoYm77pIOOHq2p+8r+cMnjk5Q0WFn0vfs4jeWX5UCZjx/2QGQjJa4R1Se1UZkCSoygZt8P8CAwEAAaMhMB8wHQYDVR0OBBYEFOZgtmMVgA9GI9+vM5PWesJ1UUB+MA0GCSqGSIb3DQEBCwUAA4IBAQAbR649eRec/TKCg0AG+m8WO0svI/IH3oUAIaf+TN5CT23U4JJZVoKY8DlO9zlVFaVK7jKjJAdbOqpHIUPbSMwr0TX6DqMuVgGSzs3Zham4Uflv2kslbwDBhiadKbf2dSqkVHt2oVLodzH7lFQ17Y1KWvl8Ss68gcaH6XqXOB54/iCms8zp+SwYLoykNcF0e2WR5BrnQHjQ1wdJeiVnEmFcMXNN9tdhRMt6zIUWDbnwkFQM9ZQfQf+JAj2OmtrtjLqy9fktj2TZByQ7D8fZUFPRSFktb1tA5zM7AoHcqeeDMA/HI/XOC9B7HE44j0xIzJ2OSmLh8l2fgYcxTyPWhKTd</wsse:BinarySecurityToken>
+                  <ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#" Id="SIG-e1a666ac-0d63-453e-a54e-e74d9b013cc3">
+                    <ds:SignedInfo>
+                      <ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#">
+                        <ec:InclusiveNamespaces xmlns:ec="http://www.w3.org/2001/10/xml-exc-c14n#" PrefixList="soap"/>
+                      </ds:CanonicalizationMethod>
+                      <ds:SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/>
+                      <ds:Reference URI="#id-e0b059b4-ae41-4af8-b4ee-8a842238f53c">
+                        <ds:Transforms>
+                          <ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+                        </ds:Transforms>
+                        <ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>
+                        <ds:DigestValue>FFvsa6AmFaMM79xs9DmvycAq2Iw=</ds:DigestValue>
+                      </ds:Reference>
+                    </ds:SignedInfo>
+                    <ds:SignatureValue>IJtjurkOfMn3Z8GCABXzNjjXwjtt+A5WtzHkUxjCCP+iKrQzwtCWl10GnXUdshY0afwA07puiBKoBxD0azIL7mjTyQ0Z5o7uXWTg9jo1H/Y9DGRa2iuFhtwnBP1PMlN6zpC1XK4z4K3SNyK+uAUfVk6aTJH7+lNB6gHl3njgrcFeDext6h+XcTT5Q6QawVr5GiZYv7PThBxIbGoH8yDsxn8VRZ8vMUIiRF/+wNKKOLZRPpiyJdC/4S6uyAR68frqpdoqH/T4iLcRiM3eqzN3J4JHZaRPQqU5OFRIBS6C+LspHSTsnQp2gUHvZW5UexrulOJk8waQWAuC5gg+hofTpg==</ds:SignatureValue>
+                    <ds:KeyInfo Id="KI-dc93bdc4-dddf-4b97-89a1-088deb06cdd2">
+                      <wsse:SecurityTokenReference wsu:Id="STR-57f15772-5394-4e45-9c80-d380249bc663">
+                        <wsse:Reference URI="#X509-e4795298-c4a8-467a-a10a-638ffb58a38a" ValueType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3"/>
+                      </wsse:SecurityTokenReference>
+                    </ds:KeyInfo>
+                  </ds:Signature>
+                </wsse:Security>
+              </soap:Header>
+              <soap:Body xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd" wsu:Id="id-e0b059b4-ae41-4af8-b4ee-8a842238f53c">
+                <ns3:annehmenAuftragRequest xmlns:ns3="http://spri.telekom.de/oss/v4/envelope" xmlns:ns2="http://spri.telekom.de/oss/v4/message" xmlns:ns4="http://spri.telekom.de/oss/v4/order" xmlns:ns5="http://spri.telekom.de/oss/v4/complex" xmlns:ns6="http://spri.telekom.de/oss/v4/fttx">
+                  <control>
+                    <zeitstempel>'.date(\DateTimeInterface::RFC3339_EXTENDED).'</zeitstempel>
+                    <majorRelease>04</majorRelease>
+                    <minorRelease>30</minorRelease>
+                    <signaturId>
+                      <issuer>CN=NPS Webservice, OU=SPRI RS, O=ACME Providing Systems, L=Luebeck, ST=Schleswig-Holstein, C=DE</issuer>
+                      <serial>6662345775432</serial>
+                    </signaturId>
+                  </control>
+                  <auftrag></auftrag>
+                </ns3:annehmenAuftragRequest>
+              </soap:Body>
+            </soap:Envelope>';
+
+        $this->request_bereitstellung_neu ='
+        <auftrag>
+          <externeAuftragsnummer></externeAuftragsnummer>
+          <auftraggeber>
+            <auftraggebernummer></auftraggebernummer>
+            <leistungsnummer>'.substr(time(),2, strlen(time())).'</leistungsnummer>
+          </auftraggeber>
+          <geschaeftsfall xmlns:ns4="http://spri.telekom.de/oss/v4/order" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="ns4:BereitstellungType">
+            <ansprechpartner>
+              <auftragsmanagement>
+                <anrede>2</anrede>
+                <vorname>Betty M.</vorname>
+                <nachname>Bocanegra</nachname>
+                <telefonnummer>04515559222</telefonnummer>
+                <emailadresse>auftrag@provider.net</emailadresse>
+              </auftragsmanagement>
+            </ansprechpartner>
+            <termine>
+              <auftraggeberWunschtermin></auftraggeberWunschtermin>
+            </termine>
+            <auftragsposition>
+              <produkt xmlns:ns5="http://spri.telekom.de/oss/v4/fttx" xsi:type="ns5:ProduktFTTXType">
+                <bezeichner>FTTH L2 XGSPON 300 50</bezeichner>
+              </produkt>
+              <geschaeftsfallProdukt xmlns:ns5="http://spri.telekom.de/oss/v4/fttx" xsi:type="ns5:FTTXBereitstellungType">
+                <standortA>
+                  <person>
+                    <anrede>1</anrede>
+                    <vorname>Gabriele</vorname>
+                    <nachname>Nussbaum</nachname>
+                    <telefonnummer>01590 1890067</telefonnummer>
+                  </person>
+                  <strasse>
+                    <strassenname>Geniner Str.</strassenname>
+                    <hausnummer>80</hausnummer>
+                  </strasse>
+                  <postleitzahl>23560</postleitzahl>
+                  <ort>
+                    <ortsname>Lübeck</ortsname>
+                  </ort>
+                </standortA>
+                <vormieter>
+                <person>
+                  <vorname>Paula</vorname>
+                  <nachname>Mietnomadin</nachname>
+                </person>
+                <homeId>
+                  <homeIdNummer></homeIdNummer>
+                </homeId>
+              </vormieter>
+              <technologie>FTTH</technologie>
+              </geschaeftsfallProdukt>
+            </auftragsposition>
+          </geschaeftsfall>
+          <geschaeftsfallArt>Bereitstellung</geschaeftsfallArt>
+          <aenderungskennzeichen></aenderungskennzeichen>
+        </auftrag>';
+
+        $this->request_bereitstellung_konnektivitaet =
+            '<auftrag>
+            <externeAuftragsnummer></externeAuftragsnummer>
+            <auftraggeber>
+              <auftraggebernummer></auftraggebernummer>
+              <leistungsnummer>'.substr(time(),2, strlen(time())).'</leistungsnummer>
+            </auftraggeber>
+          <geschaeftsfall xsi:type="ns4:BereitstellungType" xmlns:ns4="http://spri.telekom.de/oss/v4/order" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+               <ansprechpartner>
+                  <auftragsmanagement>
+                     <anrede>1</anrede>
+                     <vorname>Sven</vorname>
+                     <nachname>Rauschning</nachname>
+                     <telefonnummer>04619099223</telefonnummer>
+                     <emailadresse>ooc1und1@1und1.net</emailadresse>
+                  </auftragsmanagement>
+               </ansprechpartner>
+               <termine>
+                  <auftraggeberWunschtermin></auftraggeberWunschtermin>
+               </termine>
+               <auftragsposition>
+                  <produkt xsi:type="ns5:ProduktFTTXType" xmlns:ns5="http://spri.telekom.de/oss/v4/fttx">
+                     <bezeichner>FTTH L2 XGSPON 300 150</bezeichner>
+                  </produkt>
+                  <geschaeftsfallProdukt xsi:type="ns5:FTTXBereitstellungType" xmlns:ns5="http://spri.telekom.de/oss/v4/fttx">
+                     <standortA>
+                        <person>
+                           <anrede>1</anrede>
+                           <vorname>Ka-Ath</vorname>
+                           <nachname>Kruge</nachname>
+                           <telefonnummer>01525 3660070</telefonnummer>
+                        </person>
+                        <strasse>
+                           <strassenname>Nordmeerstraße</strassenname>
+                           <hausnummer>58</hausnummer>
+                        </strasse>
+                        <postleitzahl>23570</postleitzahl>
+                        <ort>
+                           <ortsname>Lübeck</ortsname>
+                        </ort>
+                     </standortA>
+                     <montageleistung>
+                        <ansprechpartner>
+                           <anrede>1</anrede>
+                           <vorname>Marmaduc</vorname>
+                           <nachname>Chubb-Baggins</nachname>
+                        </ansprechpartner>
+                     </montageleistung>
+                  </geschaeftsfallProdukt>
+                  <position>
+                     <produkt xsi:type="ns5:ProduktFTTXType" xmlns:ns5="http://spri.telekom.de/oss/v4/fttx">
+                        <bezeichner>Konnektivität</bezeichner>
+                     </produkt>
+                  </position>
+                  <position>
+                     <produkt xsi:type="ns5:ProduktFTTXType" xmlns:ns5="http://spri.telekom.de/oss/v4/fttx">
+                        <bezeichner>EtVerhaeltnis#Mieter#</bezeichner>
+                     </produkt>
+                  </position>
+                  <position>
+                     <produkt xsi:type="ns5:ProduktFTTXType" xmlns:ns5="http://spri.telekom.de/oss/v4/fttx">
+                        <bezeichner>EtFestnetz#01525 3660070#</bezeichner>
+                     </produkt>
+                  </position>
+                  <position>
+                     <produkt xsi:type="ns5:ProduktFTTXType" xmlns:ns5="http://spri.telekom.de/oss/v4/fttx">
+                        <bezeichner>EtMail#m.chubb.baggins@live.de#</bezeichner>
+                     </produkt>
+                  </position>
+                  <position>
+                     <produkt xsi:type="ns5:ProduktFTTXType" xmlns:ns5="http://spri.telekom.de/oss/v4/fttx">
+                        <bezeichner>EtArt#Eigentuemer#</bezeichner>
+                     </produkt>
+                  </position>
+               </auftragsposition>
+            </geschaeftsfall>
+            <geschaeftsfallArt>Bereitstellung</geschaeftsfallArt>
+            <aenderungskennzeichen></aenderungskennzeichen>
+        </auftrag>';
     }
 
 

@@ -13,6 +13,7 @@ use Fuel\Core\Router;
 use Monolog\Formatter\LineFormatter;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
+use Spri\Auftragsfactory;
 use Spri\Exception\Factory\DataRequirement;
 use Spri\Exception\Factory\NotFoundException;
 use Spri\Exception\Issue\Recoverable\Network;
@@ -22,6 +23,7 @@ use Spri\Exception\Issue\Unrecoverable\Partner;
 use Spri\MeldungsversandService;
 use Spri\Model\Spri;
 
+use Spri\Model\Spri\Basics\Partnermatrix;
 use Spri\Model\Spri\Meldungscode;
 use Spri\Soap\Server as SoapServer;
 use Spri\Endpoint\Supplier;
@@ -31,6 +33,8 @@ use Spri\Soap\Security\Wsse;
 use Spri\Soap\Security\Certificate\Signing;
 
 use Spri\SpriClassmap;
+use Spri\Soap\Client as PartnerClient;
+use Spriserver\Config;
 
 
 class Controller_Soapsimulator extends Controller_Hybrid
@@ -73,6 +77,12 @@ class Controller_Soapsimulator extends Controller_Hybrid
         return Response::forge( Presenter::forge('soapsimulator/simulator', 'view',false) );
     }
 
+    public function action_auftrag(): Response
+    {
+        $this->getSimulatorLogger()->info("simulator->auftrag()");
+        return Response::forge( Presenter::forge('soapsimulator/auftrag', 'view',false) );
+    }
+
     public function action_auftragsstatus(): Response
     {
         $this->getSimulatorLogger()->info("simulator->auftragsstatus()". json_encode(Request::active()->params()));
@@ -89,11 +99,9 @@ class Controller_Soapsimulator extends Controller_Hybrid
     {
         $params = Request::active()->params();
         $icc = strtolower($params['icc']);
-        $this->getSimulatorLogger()->info("simulator->wsdl_icc(): schema/".$icc."/wsdl", Request::active()->params());
+        $this->getSimulatorLogger()->info("simulator->/soap/v4/".$icc."/wsdl: forge(schema/".$icc."/wsdl)", Request::active()->params());
         return Response::forge(View::forge('schema/'.$icc.'/wsdl'));
     }
-
-
 
     public function action_orderer() : Response
     {
@@ -108,8 +116,8 @@ class Controller_Soapsimulator extends Controller_Hybrid
     {
         $params = Request::active()->params();
         $this->icc = "DEU.".strtoupper($params['icc']);
-        $this->getSimulatorLogger()->info("simulator->orderer(icc:".$this->icc.")", Request::active()->params());
-        $this->soap_server->setClass(Orderer::class, ['CarrierCode', $this->icc]);
+        $this->getSimulatorLogger()->info("simulator->/soap/v4/".$this->icc."/orderer/", Request::active()->params());
+        $this->soap_server->setClass(new Orderer($this->icc), ['CarrierCode', $this->icc]);
         $this->spri_role = Spri::SPRI_ROLE_ORDERER;
 
         return $this->action_index();
@@ -119,20 +127,17 @@ class Controller_Soapsimulator extends Controller_Hybrid
     {
         try {
             $this->soap_server->handle();
-        }
-        catch (\SoapFault $soapFault) {
-            return Response::forge(View::forge('soap/fault/details',['code' => $soapFault->faultcode, 'msg' => $soapFault->faultstring, 'actor' => $soapFault->faultactor, 'details' => $soapFault->detail->ExceptionDetail->Type.' at '.$soapFault->getFile().':'.$soapFault->getLine()]));
-        }
-        catch (\Exception $exception) {
-            return Response::forge(View::forge('exception/default',['class' => get_class($exception), 'msg' => $exception->getMessage(), 'source' => $exception->getFile()."(at line:".$exception->getLine().")", 'trace' => $exception->getTraceAsString()]));
+        } catch (\SoapFault $soapFault) {
+            return Response::forge(View::forge('soap/fault/details', ['code' => $soapFault->faultcode, 'msg' => $soapFault->faultstring, 'actor' => $soapFault->faultactor, 'details' => $soapFault->detail->ExceptionDetail->Type . ' at ' . $soapFault->getFile() . ':' . $soapFault->getLine()]), 500, ['Content-Type' => 'text/xml']);
+        } catch (\Exception $exception) {
+            return Response::forge(View::forge('exception/default', ['class' => get_class($exception), 'msg' => $exception->getMessage(), 'source' => $exception->getFile() . "(at line:" . $exception->getLine() . ")", 'trace' => $exception->getTraceAsString()]), 500, ['Content-Type' => 'text/html']);
         }
 
         $signedResponse = Wsse::sign($this->soap_server->getResponse(), new Signing(
-                Config::get('spri.partners.'.$this->icc.'.services.v4.signature.certificate', ''),
-                Config::get('spri.partners.'.$this->icc.'.services.v4.signature.issuer'),
-                Config::get('spri.partners.'.$this->icc.'.services.v4.signature.serial'),
-                Config::get('spri.partners.'.$this->icc.'.services.v4.signature.key', ''))
-        );
+            Config::get('spri.partners.' . $this->icc . '.services.v4.signature.certificate', ''),
+            Config::get('spri.partners.' . $this->icc . '.services.v4.signature.issuer'),
+            Config::get('spri.partners.' . $this->icc . '.services.v4.signature.serial'),
+            Config::get('spri.partners.' . $this->icc . '.services.v4.signature.key', '')));
 
         $request = new \DOMDocument();
         $request->loadXML($this->soap_server->getLastRequest());
@@ -141,13 +146,10 @@ class Controller_Soapsimulator extends Controller_Hybrid
         $response->loadXML($this->soap_server->getResponse());
 
 
-        if($request->getElementsByTagName('meldung')->count() > 0)
-        {
+        if ($request->getElementsByTagName('meldung')->count() > 0) {
             $this->getSimulatorLogger()->warn("annehmenMeldungRequest: ", ["Request" => $request->saveXML($request->getElementsByTagName('meldung')->item(0))]);
             $this->getSimulatorLogger()->warn("annehmenMeldungResponse: ", ["Response" => $response->saveXML($response->getElementsByTagName('quittung')->item(0))]);
-        }
-        else if($request->getElementsByTagName('auftrag')->count() > 0)
-        {
+        } else if ($request->getElementsByTagName('auftrag')->count() > 0) {
             $this->getSimulatorLogger()->warn("annehmenAuftragRequest : ", ["Request" => $request->saveXML($request->getElementsByTagName('auftrag')->item(0))]);
             $this->getSimulatorLogger()->warn("annehmenAuftragResponse: ", ["Response" => $response->saveXML($response->getElementsByTagName('quittung')->item(0))]);
         }
@@ -155,12 +157,32 @@ class Controller_Soapsimulator extends Controller_Hybrid
         return Response::forge($signedResponse);
     }
 
+    public function action_sendeAuftrag() : Response
+    {
+        $input = Request::active()->input();
+        $params = $input->post();
+        $this->getSimulatorLogger()->info("simulator->sendeAuftrag() ", (array)json_encode($params));
+
+        $this->icc =  $input->post('icc');
+        $this->soap_server->setClass(Orderer::class, ['CarrierCode', $this->icc]);
+        $this->spri_role = Spri::SPRI_ROLE_ORDERER;
+
+        $factory = new Auftragsfactory();
+        $auftrag = $factory->forgeAuftragRequest($this->icc, $params['AuftragsTyp'], $params);
+        $client = $this->getPartnerClient("DEU.SWL451");
+        //$client->annehmenAuftrag($auftrag);
+        $response = Presenter::forge('soapsimulator/auftrag', 'view',false);
+        return Response::forge(Presenter::forge('soapsimulator/auftrag', 'view',false));
+    }
+
     public function action_sendeMeldung() : Response
     {
-        $this->spri_role = Spri::SPRI_ROLE_ORDERER;
-        $this->getSimulatorLogger()->info("simulator->sendeMeldung() ", Request::active()->params());
-
         $params = Request::active()->params();
+        $this->getSimulatorLogger()->info("simulator->sendeMeldung() ", $params);
+
+        $this->icc = "DEU.".strtoupper($params['icc']);
+        $this->soap_server->setClass(Orderer::class, ['CarrierCode', $this->icc]);
+        $this->spri_role = Spri::SPRI_ROLE_ORDERER;
         $mcode = Meldungscode::get_by_mc_id(intval($params['mcode']));
         $meldungscode = $mcode[Meldungscode::COLUMN_MELDUNGS_CODE];
 
@@ -197,27 +219,55 @@ class Controller_Soapsimulator extends Controller_Hybrid
         }
         catch (\SoapFault $soapFault)
         {
-            return Response::forge(View::forge('soap/fault/details',['code' => $soapFault->faultcode, 'msg' => $soapFault->faultstring, "details" => $soapFault->getFile()." at line ".$soapFault->getLine()]),200, ['Content-Type' => 'text/xml']);
+            return Response::forge(View::forge('soap/fault/details',['code' => $soapFault->faultcode, 'msg' => $soapFault->faultstring, "details" => $soapFault->getFile()." at line ".$soapFault->getLine()]),500, ['Content-Type' => 'text/xml']);
         }
         catch(DataRequirement $exception)
         {
-            return Response::forge(View::forge('exception/default',['class' => 'Required-Factory-Data-Exception', 'msg' => $exception->getMessage(), 'model' => $exception->getType().": ".$exception->getElement(), 'parameter' => $exception->getField(), 'trace' => $exception->getTraceAsString()]));
+            return Response::forge(View::forge('exception/default',['class' => 'Required-Factory-Data-Exception', 'msg' => $exception->getMessage(), 'model' => $exception->getType().": ".$exception->getElement(), 'parameter' => $exception->getField(), 'trace' => $exception->getTraceAsString()]),500, ['Content-Type' => 'text/html']);
         }
         catch(NotFoundException $exception)
         {
-            return Response::forge(View::forge('exception/default',['class' => 'Not-found-by-Reference-Exception', 'msg' => $exception->getMessage(), 'model' => $exception->getType().": ".$exception->getElement(), 'parameter' => $exception->getElement(), 'trace' => $exception->getTraceAsString()]));
+            return Response::forge(View::forge('exception/default',['class' => 'Not-found-by-Reference-Exception', 'msg' => $exception->getMessage(), 'model' => $exception->getType().": ".$exception->getElement(), 'parameter' => $exception->getElement(), 'trace' => $exception->getTraceAsString()]),500, ['Content-Type' => 'text/html']);
         }
         catch (Partner $exception) {
-            return Response::forge(View::forge('exception/default',['class' => 'No-Partner-Exception', 'msg' => $exception->getMessage(), 'source' => $exception->getFile()." at Line ".$exception->getLine(), 'trace' => $exception->getTraceAsString()]));
+            return Response::forge(View::forge('exception/default',['class' => 'No-Partner-Exception', 'msg' => $exception->getMessage(), 'source' => $exception->getFile()." at Line ".$exception->getLine(), 'trace' => $exception->getTraceAsString()]),500, ['Content-Type' => 'text/html']);
         }
         catch (Data|Recipient|Network $exception) {
-            return Response::forge(View::forge('exception/default',['class' => 'Connection-Problem-Exception', 'msg' => $exception->getMessage(), 'source' => $exception->getFile()." at Line ".$exception->getLine(), 'trace' => $exception->getTraceAsString()]));
+            return Response::forge(View::forge('exception/default',['class' => 'Connection-Problem-Exception', 'msg' => $exception->getMessage(), 'source' => $exception->getFile()." at Line ".$exception->getLine(), 'trace' => $exception->getTraceAsString()]),500, ['Content-Type' => 'text/html']);
         }
         catch (\Exception $exception) {
-            return Response::forge(View::forge('exception/default',['class' => 'PHP-Error-Exception', 'msg' => $exception->getMessage(), 'source' => $exception->getFile()." at Line ".$exception->getLine(), 'trace' => $exception->getTraceAsString()]));
+            return Response::forge(View::forge('exception/default',['class' => 'PHP-Error-Exception', 'msg' => $exception->getMessage(), 'source' => $exception->getFile()." at Line ".$exception->getLine(), 'trace' => $exception->getTraceAsString()]),500, ['Content-Type' => 'text/html']);
         }
 
         return $ret;
+    }
+    public function action_xmlFormat(): Response
+    {
+        return Response::forge(View::forge('soapsimulator/xmlformat'));
+    }
+
+    private function getPartnerClient(string $icc) : PartnerClient
+    {
+        $partner_wsdl = Config::get('spri.partners.'.$icc.'.services.v4.wsdl');
+
+        $client = new PartnerClient();
+        $client->setSpriRole($this->spri_role);
+        $sCarrierIssuer = Config::get('spri.partners.'.$this->icc.'.services.v4.signature.issuer');
+        $sCarrierSerial = Config::get('spri.partners.'.$this->icc.'.services.v4.signature.serial');
+        $sCarrierCert = Config::get('spri.partners.'.$icc.'.certificate.x509');
+        $sCarrierPrivKey = Config::get('spri.partners.'.$icc.'.certificate.private_key');
+
+        $wsse_signing_cert = new Signing($sCarrierCert,$sCarrierIssuer,$sCarrierSerial,$sCarrierPrivKey);
+        $options = [
+            'soap_version' => SOAP_1_1,
+            'classmap' => SpriClassmap::getCollection(),
+            'wsse_signing_cert' => $wsse_signing_cert
+        ];
+        $client->setWSDLCache(false);
+        $client->setWSDL($partner_wsdl);
+        $client->setOptions($options);
+
+        return $client;
     }
 
     /**
@@ -229,13 +279,19 @@ class Controller_Soapsimulator extends Controller_Hybrid
         if(!$this->customLogger)
         {
             $logger = new Logger("Simulator");
-            $logHandler = new StreamHandler(APPPATH."logs".DS."custom".DS.date('Y').DS.date('m').DS.date('d').DS."simulator.log");
+            $logHandler = new StreamHandler(APPPATH."logs".DS."custom".DS."simulator".DS.date('Y').DS.date('m').DS.date('d').".log");
             $logHandler->setFormatter(new LineFormatter());
             $logger->pushHandler($logHandler);
             $this->customLogger = $logger;
         }
 
         return $this->customLogger;
+    }
+
+
+    public function action_404() : Response
+    {
+        return Response::forge(View::forge('exception/404'),404, ['Content-Type' => 'text/html']);
     }
 
     /**
