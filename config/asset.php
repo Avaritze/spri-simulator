@@ -40,7 +40,7 @@ return array(
 	 *
 	 */
 
-	'paths' => array('modules'.DS.'sprisimulator'.DS.'bootstrap-5.3.3/dist/'),
+	'paths' => array('assets/modules'.DS.'sprisimulator'.DS.'bootstrap-5.3.3/dist/'),
 
 	/**
 	 * -------------------------------------------------------------------------

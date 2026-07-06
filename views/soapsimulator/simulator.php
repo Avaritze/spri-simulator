@@ -379,59 +379,64 @@
             let agRequest;
             let extAuftragsNr;
 
-            if(ak==="Standard") {
-                if(auftrag === 1){
-                    if(icc === "ava") {
-                        agnr = "<?php echo $this->arr_Auftraggeber['ava']['agnr']; ?>";
-                        extAuftragsNr = "<?php echo $this->arr_Auftraggeber['ava']['icc'] . ".8.1." . sprintf('%02d', $this->count_Auftrag); ?>";
-                        agRequest = `<?php echo $request_auftrag_ava; ?>`;
-                    } else if(icc === "nps") {
-                        agnr = "<?php echo $this->arr_Auftraggeber['nps']['agnr']; ?>";
-                        extAuftragsNr = "<?php echo $this->arr_Auftraggeber['nps']['icc'] . ".7.1." . sprintf('%02d', $this->count_Auftrag); ?>";
-                        agRequest = `<?php echo $request_auftrag_nps; ?>`;
-                    }
-                    homeId = "<?php echo $this->arr_home_ids[rand(0, count($this->arr_home_ids)-1)]; ?>";
-                    soapAuftrag = `<?php echo $request_bereitstellung_neu; ?>`;
-                    soapAuftrag = soapAuftrag.replace("<homeIdNummer></homeIdNummer>","<homeIdNummer>"+homeId+"</homeIdNummer>");
+            if(ak!=="Standard")
+            {
+                let auftragsAuswahl = document.getElementById("auftragNeuAen").value;
+                extAuftragsNr = auftragsAuswahl;
+                if(extAuftragsNr.indexOf("AVA", 0) !== -1)
+                {
+                    icc = "ava";
                 }
-                else if(auftrag === 2) {
-                    extAuftragsNr = "NPS.7.1.<?php echo sprintf('%02d', $this->count_Auftrag); ?>";
-                    soapAuftrag = `<?php echo $request_auftrag_bereitstellung_neu; ?>`;
-                } else if(auftrag === 3) {
-                    extAuftragsNr = "AVA.8.3.<?php echo sprintf('%02d', $this->count_Auftrag); ?>";
-                    soapAuftrag = `<?php echo $request_auftrag_bereitstellung_konnektivitaet; ?>`;
-                } else if(auftrag === 4) {
-                    extAuftragsNr = "NPS.7.3.<?php echo sprintf('%02d', $this->count_Auftrag); ?>";
-                    soapAuftrag = `<?php echo $request_auftrag_neu_konnektivitaet; ?>`;
+                else if(extAuftragsNr.indexOf("NPS", 0) !== -1)
+                {
+                    icc = "nps";
                 }
 
-
-            } else {
-                extAuftragsNr = document.getElementById("auftragNeuAen").value;
-                console.log(extAuftragsNr);
-                if(extAuftragsNr.indexOf("AVA", 0) !== -1) {
-                    agnr = "<?php echo $this->arr_Auftraggeber['ava']['agnr']; ?>";
-                    agRequest = `<?php echo $request_auftrag_ava; ?>`;
-                    soapAuftrag = `<?php echo $request_bereitstellung_neu; ?>`;
-                } else if(extAuftragsNr.indexOf("NPS", 0) !== -1) {
-                    agnr = "<?php echo $this->arr_Auftraggeber['nps']['agnr']; ?>";
-                    agRequest = `<?php echo $request_auftrag_nps; ?>`;
-                    soapAuftrag = `<?php echo $request_bereitstellung_neu; ?>`;
-                } else if(extAuftragsNr.indexOf("8.3", 0) !== -1) {
-                    soapAuftrag = `<?php echo $request_auftrag_bereitstellung_konnektivitaet; ?>`;
-                } else if(extAuftragsNr.indexOf("7.3", 0) !== -1) {
-                    soapAuftrag = `<?php echo $request_auftrag_neu_konnektivitaet; ?>`;
+                if(extAuftragsNr.indexOf("NEU", 0) !== -1)
+                {
+                    auftrag = 1;
+                }
+                else if(extAuftragsNr.indexOf("KON", 0) !== -1)
+                {
+                    auftrag = 2;
                 }
             }
 
+            if(icc === "ava") {
+                agnr = "<?php echo $this->arr_Auftraggeber['ava']['agnr']; ?>";
+                if(ak==="Standard") {
+                    extAuftragsNr = "<?php echo $this->arr_Auftraggeber['ava']['icc'] . ".NEU.1." . sprintf('%02d', $this->count_Auftrag); ?>";
+                }
+                agRequest = `<?php echo $request_auftrag_ava; ?>`;
+            } else if(icc === "nps") {
+                agnr = "<?php echo $this->arr_Auftraggeber['nps']['agnr']; ?>";
+                if(ak==="Standard") {
+                    extAuftragsNr = "<?php echo $this->arr_Auftraggeber['nps']['icc'] . ".NEU.1." . sprintf('%02d', $this->count_Auftrag); ?>";
+                }
+                agRequest = `<?php echo $request_auftrag_nps; ?>`;
+            }
 
+            if(auftrag === 1)
+            {
+                soapAuftrag = `<?php echo $request_bereitstellung_neu; ?>`;
+                if(ak==="Standard") {
+                    homeId = "<?php echo $this->arr_home_ids[rand(0, count($this->arr_home_ids) - 1)]; ?>";
+                    soapAuftrag = soapAuftrag.replace("<homeIdNummer></homeIdNummer>", "<homeIdNummer>" + homeId + "</homeIdNummer>");
+                }
+            }
+            else if(auftrag === 2)
+            {
+                extAuftragsNr = extAuftragsNr.replace("NEU","KON");
+                soapAuftrag = `<?php echo $request_bereitstellung_konnektivitaet; ?>`;
+            }
+            console.log(soapAuftrag);
             soapAuftrag = soapAuftrag.replace("<auftraggebernummer></auftraggebernummer>","<auftraggebernummer>"+agnr+"</auftraggebernummer>");
             soapAuftrag = soapAuftrag.replace("<externeAuftragsnummer></externeAuftragsnummer>","<externeAuftragsnummer>"+extAuftragsNr+"</externeAuftragsnummer>");
 
             if(ak==="Storno") {
                 soapAuftrag = soapAuftrag.replace("<aenderungskennzeichen></aenderungskennzeichen>","<aenderungskennzeichen>Storno</aenderungskennzeichen>");
                 soapAuftrag = soapAuftrag.replace("<auftraggeberWunschtermin></auftraggeberWunschtermin>",
-                    "<auftraggeberWunschtermin><datum><?php echo date('Y-m-d',strtotime('+7 day')); ?></datum><zeitfenster>26</zeitfenster></auftraggeberWunschtermin>");
+                    "<auftraggeberWunschtermin><datum><?php echo date('Y-m-d',strtotime('+0 day')); ?></datum><zeitfenster>26</zeitfenster></auftraggeberWunschtermin>");
             } else if(ak==="Terminverschiebung") {
                 soapAuftrag = soapAuftrag.replace("<auftraggeberWunschtermin></auftraggeberWunschtermin>", "<auftraggeberWunschtermin><datum><?php echo date('Y-m-d',strtotime('+7 day')); ?></datum><zeitfenster>26</zeitfenster></auftraggeberWunschtermin>");
                 soapAuftrag = soapAuftrag.replace("<aenderungskennzeichen></aenderungskennzeichen>",
@@ -511,35 +516,46 @@
         function sendSOAPRequestKuendigung(ak) {
             
             let xhr = new XMLHttpRequest();
-            xhr.open('POST', '<?php echo \Fuel\Core\Router::get('oass_endpoint', ['version' => 4]); ?>', true);
 
-            
-            let soapAuftrag = `<?php echo $request_auftrag_kuendigung_komplett; ?>`;
-            let vertrag = document.getElementById("vertrag");
-            let vertragsnr = vertrag.value;
-            let lineid = vertrag.options[vertrag.selectedIndex].text;
+            let soapAuftrag;
+            let agRequest;
+            let extAuftragsNr;
+            let cntAuftrag = "<?php echo sprintf('%02d', $this->count_Auftrag); ?>";
+            let anschluss = document.getElementById("vertrag");
+            let vertrag = document.getElementById("vertrag").value;
+            let vertragsnr = vertrag.split("-")[0];
+            let agnr = vertrag.split("-")[1];
+            let lineid = anschluss.options[anschluss.selectedIndex].text;
+
+            if(agnr.indexOf("AVA", 0) !== -1)
+            {
+                extAuftragsNr = "AVA.KUE.9."+cntAuftrag;
+                agRequest = `<?php echo $request_auftrag_ava; ?>`;
+            }
+            else if(agnr.indexOf("NPS", 0) !== -1)
+            {
+                extAuftragsNr = "NPS.KUE.9."+cntAuftrag;
+                agRequest = `<?php echo $request_auftrag_nps; ?>`;
+            }
+
+            soapAuftrag = `<?php echo $request_kuendigung_ag; ?>`;
+
+            soapAuftrag = soapAuftrag.replace("<auftraggebernummer></auftraggebernummer>","<auftraggebernummer>"+agnr+"</auftraggebernummer>");
+            soapAuftrag = soapAuftrag.replace("<externeAuftragsnummer></externeAuftragsnummer>","<externeAuftragsnummer>"+extAuftragsNr+"</externeAuftragsnummer>");
+
             soapAuftrag = soapAuftrag.replace("<vertragsnummer></vertragsnummer>","<vertragsnummer>"+vertragsnr+"</vertragsnummer>");
             soapAuftrag = soapAuftrag.replace("<lineId></lineId>","<lineId>"+lineid+"</lineId>");
 
-            if(ak==="Storno") {
-                soapAuftrag = soapAuftrag.replace("<aenderungskennzeichen></aenderungskennzeichen>","<aenderungskennzeichen>Storno</aenderungskennzeichen>");
-                soapAuftrag = soapAuftrag.replace("<auftraggeberWunschtermin></auftraggeberWunschtermin>",
-                    "<auftraggeberWunschtermin><datum><?php echo date('Y-m-d',strtotime('+7 day')); ?></datum><zeitfenster>26</zeitfenster></auftraggeberWunschtermin>");
-            } else if(ak==="Terminverschiebung") {
-                soapAuftrag = soapAuftrag.replace("<auftraggeberWunschtermin></auftraggeberWunschtermin>", "<auftraggeberWunschtermin><datum><?php echo date('Y-m-d',strtotime('+7 day')); ?></datum><zeitfenster>26</zeitfenster></auftraggeberWunschtermin>");
-                soapAuftrag = soapAuftrag.replace("<aenderungskennzeichen></aenderungskennzeichen>",
-                    "<aenderungskennzeichen>Terminverschiebung</aenderungskennzeichen><terminNeu><?php echo date('Y-m-d',strtotime('+14 day')); ?></terminNeu>");
+            soapAuftrag = soapAuftrag.replace("<aenderungskennzeichen></aenderungskennzeichen>","<aenderungskennzeichen>Standard</aenderungskennzeichen>");
+            soapAuftrag = soapAuftrag.replace("<auftraggeberWunschtermin></auftraggeberWunschtermin>",
+                "<auftraggeberWunschtermin><datum><?php echo date('Y-m-d',strtotime('+7 day')); ?></datum><zeitfenster>26</zeitfenster></auftraggeberWunschtermin>");
 
-            } else {
-                soapAuftrag = soapAuftrag.replace("<aenderungskennzeichen></aenderungskennzeichen>","<aenderungskennzeichen>Standard</aenderungskennzeichen>");
-                soapAuftrag = soapAuftrag.replace("<auftraggeberWunschtermin></auftraggeberWunschtermin>",
-                    "<auftraggeberWunschtermin><datum><?php echo date('Y-m-d',strtotime('+7 day')); ?></datum><zeitfenster>26</zeitfenster></auftraggeberWunschtermin>");
-            }
-            
+            agRequest = agRequest.replace("<auftrag></auftrag>",soapAuftrag);
+
+            xhr.open('POST', '<?php echo \Fuel\Core\Router::get('oass_endpoint', ['version' => 4]); ?>', true);
             xhr.setRequestHeader('Content-Type', 'text/xml');
             xhr.setRequestHeader('SOAPAction', 'http://spri.telekom.de/oss/v4/spri/annehmenAuftrag');
 
-            
             xhr.onreadystatechange = function () {
                 if (xhr.readyState === 4) {
                     if (xhr.status === 200) {
@@ -581,20 +597,36 @@
                 }
             };
             
-            xhr.send(soapAuftrag);
+            xhr.send(agRequest);
         }
 
         function sendSOAPRequestLeistungsaenderung(ak) {
 
             let xhr = new XMLHttpRequest();
-            xhr.open('POST', '<?php echo \Fuel\Core\Router::get('oass_endpoint', ['version' => 4]); ?>', true);
-            
-            let soapAuftrag = `<?php echo $this->request_auftrag_leistungsaenderung; ?>`;
-            let vertrag = document.getElementById("vertrag");
-            let vertragsnr = document.getElementById("vertrag").value;
-            let lineid = vertrag.options[vertrag.selectedIndex].text;
-            soapAuftrag = soapAuftrag.replace("<vertragsnummer></vertragsnummer>","<vertragsnummer>"+vertragsnr+"</vertragsnummer>");
-            soapAuftrag = soapAuftrag.replace("<lineId></lineId>","<lineId>"+lineid+"</lineId>");
+
+            let soapAuftrag;
+            let agRequest;
+            let extAuftragsNr;
+            let cntAuftrag = "<?php echo sprintf('%02d', $this->count_Auftrag); ?>";
+            let anschluss = document.getElementById("vertrag");
+            let vertrag = document.getElementById("vertrag").value;
+            let vertragsnr = vertrag.split("-")[0];
+            let agnr = vertrag.split("-")[1];
+            let lineid = anschluss.options[anschluss.selectedIndex].text;
+
+            if(agnr.indexOf("AVA", 0) !== -1)
+            {
+                extAuftragsNr = "AVA.KUE.9."+cntAuftrag;
+                agRequest = `<?php echo $request_auftrag_ava; ?>`;
+            }
+            else if(agnr.indexOf("NPS", 0) !== -1)
+            {
+                extAuftragsNr = "NPS.KUE.9."+cntAuftrag;
+                agRequest = `<?php echo $request_auftrag_nps; ?>`;
+            }
+
+            soapAuftrag = `<?php echo $request_entstoerung; ?>`;
+
 
             if(ak==="Storno") {
                 soapAuftrag = soapAuftrag.replace("<aenderungskennzeichen></aenderungskennzeichen>","<aenderungskennzeichen>Storno</aenderungskennzeichen>");
@@ -678,24 +710,45 @@
         }
 
         function sendSOAPRequestEntstoerung(ak) {
-            
-            let xhr = new XMLHttpRequest();
-            xhr.open('POST', '<?php echo \Fuel\Core\Router::get('oass_endpoint', ['version' => 4]); ?>', true);
 
-            let soapAuftrag = `<?php echo $this->request_auftrag_entstoerung; ?>`;
-            if(ak==="Reklamation") {
-                soapAuftrag = `<?php echo $this->request_auftrag_reklamation; ?>`;
+            let xhr = new XMLHttpRequest();
+
+            let soapAuftrag;
+            let agRequest;
+            let extAuftragsNr;
+            let cntAuftrag = "<?php echo sprintf('%02d', $this->count_Auftrag); ?>";
+            let anschluss = document.getElementById("vertrag");
+            let vertrag = document.getElementById("vertrag").value;
+            let vertragsnr = vertrag.split("-")[0];
+            let agnr = vertrag.split("-")[1];
+            let lineid = anschluss.options[anschluss.selectedIndex].text;
+
+            if(agnr.indexOf("AVA", 0) !== -1)
+            {
+                extAuftragsNr = "AVA.EST.13."+cntAuftrag;
+                agRequest = `<?php echo $request_auftrag_ava; ?>`;
             }
-            let vertrag = document.getElementById("vertrag");
-            let vertragsnr = document.getElementById("vertrag").value;
-            let lineid = vertrag.options[vertrag.selectedIndex].text;
+            else if(agnr.indexOf("NPS", 0) !== -1)
+            {
+                extAuftragsNr = "NPS.EST.13."+cntAuftrag;
+                agRequest = `<?php echo $request_auftrag_nps; ?>`;
+            }
+
+            soapAuftrag = `<?php echo $request_entstoerung; ?>`;
+
+            soapAuftrag = soapAuftrag.replace("<auftraggebernummer></auftraggebernummer>","<auftraggebernummer>"+agnr+"</auftraggebernummer>");
+            soapAuftrag = soapAuftrag.replace("<externeAuftragsnummer></externeAuftragsnummer>","<externeAuftragsnummer>"+extAuftragsNr+"</externeAuftragsnummer>");
 
             soapAuftrag = soapAuftrag.replace("<vertragsnummer></vertragsnummer>","<vertragsnummer>"+vertragsnr+"</vertragsnummer>");
             soapAuftrag = soapAuftrag.replace("<lineId></lineId>","<lineId>"+lineid+"</lineId>");
+
             soapAuftrag = soapAuftrag.replace("<aenderungskennzeichen></aenderungskennzeichen>","<aenderungskennzeichen>Standard</aenderungskennzeichen>");
             soapAuftrag = soapAuftrag.replace("<auftraggeberWunschtermin></auftraggeberWunschtermin>",
-                "<auftraggeberWunschtermin><datum><?php echo date('Y-m-d',strtotime('+2 day')); ?></datum><zeitfenster>26</zeitfenster></auftraggeberWunschtermin>");
-            
+                "<auftraggeberWunschtermin><datum><?php echo date('Y-m-d',strtotime('+7 day')); ?></datum><zeitfenster>26</zeitfenster></auftraggeberWunschtermin>");
+
+            agRequest = agRequest.replace("<auftrag></auftrag>",soapAuftrag);
+
+            xhr.open('POST', '<?php echo \Fuel\Core\Router::get('oass_endpoint', ['version' => 4]); ?>', true);
             xhr.setRequestHeader('Content-Type', 'text/xml');
             xhr.setRequestHeader('SOAPAction', 'http://spri.telekom.de/oss/v4/spri/annehmenAuftrag');
 
@@ -742,7 +795,7 @@
                 }
             };
 
-            xhr.send(soapAuftrag);
+            xhr.send(agRequest);
         }
 
         function sendSOAPRequestLeistungsMaenderung(ak) {
@@ -1058,7 +1111,7 @@
                         <option selected value="-1">Anschluss wählen</option>
                         <?php if($this->arr_vertragsnummern) {
                             foreach($this->arr_vertragsnummern as $vertrag) { ?>
-                                <option value="<?php echo $vertrag['vertragsnr']; ?>"><?php echo $vertrag['lineid']; ?></option>
+                                <option value="<?php echo $vertrag['vertragsnr']."-".$vertrag['agnr']; ?>"><?php echo $vertrag['lineid']; ?></option>
                             <?php }
                         } ?>
                     </select>

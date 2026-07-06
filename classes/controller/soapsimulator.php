@@ -73,7 +73,7 @@ class Controller_Soapsimulator extends Controller_Hybrid
 
     public function action_simulator(): Response
     {
-        $this->getSimulatorLogger()->info("simulator->simulator()");
+        $this->getSimulatorLogger()->info("simulator->action_simulator()");
         return Response::forge( Presenter::forge('soapsimulator/simulator', 'view',false) );
     }
 
