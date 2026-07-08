@@ -5,7 +5,7 @@ return [
 
     'soap/v4/auftragsstatus'                            => ['sprisimulator/soapsimulator/auftragsstatus',   'name' => 'soap_simulator_auftrag_status'],
 
-    'soap/v4/xmlformat'                                 => ['sprisimulator/soapsimulator/xmlFormat',        'name' => 'soap_simulator_xml_format'],
+    'soap/v4/dataformat'                                 => ['sprisimulator/soapsimulator/dataFormat',        'name' => 'soap_simulator_xml_format'],
 
     'soap/v(:version)/supplier'                         => ['sprisimulator/soapsimulator/supplier',         'name' => 'soap_simulator_endpoint_supplier'],
 

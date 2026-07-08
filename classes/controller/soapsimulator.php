@@ -241,9 +241,9 @@ class Controller_Soapsimulator extends Controller_Hybrid
 
         return $ret;
     }
-    public function action_xmlFormat(): Response
+    public function action_dataFormat(): Response
     {
-        return Response::forge(View::forge('soapsimulator/xmlformat'));
+        return Response::forge(View::forge('soapsimulator/dataformat'));
     }
 
     private function getPartnerClient(string $icc) : PartnerClient
